@@ -1,0 +1,43 @@
+from typing import Dict, Callable, List
+
+from src.moneywiz_api.model.account import Account
+from src.moneywiz_api.managers.record_manager import RecordManager
+
+from src.moneywiz_api.model.account import (
+    BankChequeAccount,
+    BankSavingAccount,
+    CashAccount,
+    CreditCardAccount,
+    LoanAccount,
+    InvestmentAccount,
+    ForexAccount,
+)
+from src.moneywiz_api.types import ID
+
+
+class AccountManager(RecordManager[Account]):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def ents(self) -> Dict[str, Callable]:
+        return {
+            "BankChequeAccount": BankChequeAccount,
+            "BankSavingAccount": BankSavingAccount,
+            "CashAccount": CashAccount,
+            "CreditCardAccount": CreditCardAccount,
+            "LoanAccount": LoanAccount,
+            "InvestmentAccount": InvestmentAccount,
+            "ForexAccount": ForexAccount,
+        }
+
+    def records(self) -> Dict[ID, Account]:
+        return dict(
+            sorted(super().records().items(), key=lambda x: x[1]._display_order)
+        )
+
+    def get_accounts_for_user(self, user_id: ID) -> List[Account]:
+        return sorted(
+            [x for _, x in self.records().items() if x.user == user_id],
+            key=lambda x: (x._group_id, x._display_order),
+        )
