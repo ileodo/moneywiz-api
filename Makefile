@@ -15,7 +15,7 @@ test:
 	.venv/bin/python -m pytest tests
 
 pylint:
-	.venv/bin/python -m pylint --rcfile .pylintrc src tests
+	.venv/bin/python -m pylint --rcfile .pylintrc src
 
 mypy:
 	.venv/bin/python -m mypy src

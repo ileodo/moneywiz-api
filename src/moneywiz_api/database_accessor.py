@@ -12,10 +12,10 @@ class DatabaseAccessor:
         self._con = sqlite3.connect(db_path, uri=True)
 
         def dict_factory(cursor, row):
-            d = {}
+            record = {}
             for idx, col in enumerate(cursor.description):
-                d[col[0]] = row[idx]
-            return d
+                record[col[0]] = row[idx]
+            return record
 
         self._con.row_factory = dict_factory
 
@@ -23,8 +23,6 @@ class DatabaseAccessor:
         self._typename_to_ent: Dict[str, ENT_ID] = {
             v: k for k, v in self._ent_to_typename.items()
         }
-
-        pass
 
     def _load_primarykey(self) -> Dict[int, str]:
         cur = self._con.cursor()
@@ -81,8 +79,10 @@ class DatabaseAccessor:
         
         """
         )
-        for x in res.fetchall():
-            transaction_map[x["ZTRANSACTION"]].append((x["ZCATEGORY"], x["ZAMOUNT"]))
+        for row in res.fetchall():
+            transaction_map[row["ZTRANSACTION"]].append(
+                (row["ZCATEGORY"], row["ZAMOUNT"])
+            )
         return transaction_map
 
     def get_refund_maps(self) -> Dict[ID, ID]:
@@ -94,6 +94,6 @@ class DatabaseAccessor:
         
         """
         )
-        for x in res.fetchall():
-            refund_to_withdraw[x["ZREFUNDTRANSACTION"]] = x["ZWITHDRAWTRANSACTION"]
+        for row in res.fetchall():
+            refund_to_withdraw[row["ZREFUNDTRANSACTION"]] = row["ZWITHDRAWTRANSACTION"]
         return refund_to_withdraw

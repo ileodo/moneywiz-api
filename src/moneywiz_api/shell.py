@@ -3,14 +3,12 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict
-
-from src.moneywiz_api import MoneywizApi
 import logging
 import json
 import code
-
 import pandas as pd
 
+from src.moneywiz_api import MoneywizApi
 from src.moneywiz_api.types import ID
 
 logging.basicConfig(level=logging.DEBUG)
@@ -65,8 +63,8 @@ def write_state_data_files():
     }
 
     for name, obj in managers_map.items():
-        with open(f"{path_prefix}/{name}.data", "w") as f:
-            print(obj, file=f)
+        with open(f"{path_prefix}/{name}.data", "w") as file:
+            print(obj, file=file)
 
 
 def account_tables(user_id: ID):
