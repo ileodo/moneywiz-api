@@ -29,5 +29,8 @@ shell:
 package:
 	.venv/bin/python -m build
 
-publish:
+test-publish:
 	.venv/bin/python -m twine upload --repository testpypi dist/*
+
+publish:
+	.venv/bin/python -m twine upload --repository pypi dist/*
