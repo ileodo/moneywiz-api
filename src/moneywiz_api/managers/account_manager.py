@@ -1,9 +1,9 @@
 from typing import Dict, Callable, List
 
-from src.moneywiz_api.model.account import Account
-from src.moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.model.account import Account
+from moneywiz_api.managers.record_manager import RecordManager
 
-from src.moneywiz_api.model.account import (
+from moneywiz_api.model.account import (
     BankChequeAccount,
     BankSavingAccount,
     CashAccount,
@@ -12,7 +12,7 @@ from src.moneywiz_api.model.account import (
     InvestmentAccount,
     ForexAccount,
 )
-from src.moneywiz_api.types import ID
+from moneywiz_api.types import ID
 
 
 class AccountManager(RecordManager[Account]):

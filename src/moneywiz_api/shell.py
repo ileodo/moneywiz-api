@@ -8,8 +8,8 @@ import json
 import code
 import pandas as pd
 
-from src.moneywiz_api import MoneywizApi
-from src.moneywiz_api.types import ID
+from moneywiz_api import MoneywizApi
+from moneywiz_api.types import ID
 
 logging.basicConfig(level=logging.DEBUG)
 

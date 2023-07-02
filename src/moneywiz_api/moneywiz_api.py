@@ -1,14 +1,14 @@
 from pathlib import Path
 import logging
 
-from src.moneywiz_api.database_accessor import DatabaseAccessor
-from src.moneywiz_api.managers.account_manager import AccountManager
-from src.moneywiz_api.managers.category_manager import CategoryManager
-from src.moneywiz_api.managers.investment_holding_manager import (
+from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.managers.account_manager import AccountManager
+from moneywiz_api.managers.category_manager import CategoryManager
+from moneywiz_api.managers.investment_holding_manager import (
     InvestmentHoldingManager,
 )
-from src.moneywiz_api.managers.payee_manager import PayeeManager
-from src.moneywiz_api.managers.transaction_manager import TransactionManager
+from moneywiz_api.managers.payee_manager import PayeeManager
+from moneywiz_api.managers.transaction_manager import TransactionManager
 
 logger = logging.getLogger(__name__)
 

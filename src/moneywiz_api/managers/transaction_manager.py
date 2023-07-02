@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Dict, Callable, List, Tuple
 
-from src.moneywiz_api import utils
-from src.moneywiz_api.database_accessor import DatabaseAccessor
-from src.moneywiz_api.model.transaction import (
+from moneywiz_api import utils
+from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.model.transaction import (
     Transaction,
     DepositTransaction,
     InvestmentExchangeTransaction,
@@ -16,8 +16,8 @@ from src.moneywiz_api.model.transaction import (
     TransferWithdrawTransaction,
     WithdrawTransaction,
 )
-from src.moneywiz_api.managers.record_manager import RecordManager
-from src.moneywiz_api.types import ID
+from moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.types import ID
 
 
 class TransactionManager(RecordManager[Transaction]):
