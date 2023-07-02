@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, TypeVar, Callable
 
-from src.moneywiz_api.database_accessor import DatabaseAccessor
-from src.moneywiz_api.model.record import Record
-from src.moneywiz_api.types import ID
+from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.model.record import Record
+from moneywiz_api.types import ID
 
 
 T = TypeVar("T", bound=Record)

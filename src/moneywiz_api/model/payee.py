@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from src.moneywiz_api.model.record import Record
-from src.moneywiz_api.types import ID
+from moneywiz_api.model.record import Record
+from moneywiz_api.types import ID
 
 
 @dataclass

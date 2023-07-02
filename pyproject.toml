@@ -21,3 +21,9 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/ileodo/moneywiz-api"
 "Bug Tracker" = "https://github.com/ileodo/moneywiz-api/issues"
+
+
+[tool.pytest.ini_options]
+pythonpath = [
+    ".", "src",
+]

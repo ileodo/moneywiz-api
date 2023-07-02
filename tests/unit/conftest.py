@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.moneywiz_api import MoneywizApi
+from moneywiz_api import MoneywizApi
 
 from tests.test_config import (
     TEST_DB_PATH,

@@ -1,6 +1,6 @@
 import pytest
 
-from src.moneywiz_api.model.transaction import (
+from moneywiz_api.model.transaction import (
     RefundTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,

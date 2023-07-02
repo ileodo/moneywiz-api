@@ -1,7 +1,7 @@
 from typing import Dict, Callable
 
-from src.moneywiz_api.model.payee import Payee
-from src.moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.model.payee import Payee
+from moneywiz_api.managers.record_manager import RecordManager
 
 
 class PayeeManager(RecordManager[Payee]):

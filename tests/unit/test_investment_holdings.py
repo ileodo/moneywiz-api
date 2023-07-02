@@ -4,12 +4,12 @@ from typing import Dict, List
 
 import pytest
 
-from src.moneywiz_api.model.account import InvestmentAccount
-from src.moneywiz_api.model.transaction import (
+from moneywiz_api.model.account import InvestmentAccount
+from moneywiz_api.model.transaction import (
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
 )
-from src.moneywiz_api.types import ID
+from moneywiz_api.types import ID
 
 
 from conftest import account_manager, investment_holding_manager, transaction_manager

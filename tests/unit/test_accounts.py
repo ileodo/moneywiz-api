@@ -2,11 +2,11 @@ from collections import defaultdict
 from typing import Dict
 
 import pytest
-from src.moneywiz_api.model.transaction import (
+from moneywiz_api.model.transaction import (
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
 )
-from src.moneywiz_api.types import ID
+from moneywiz_api.types import ID
 
 from conftest import (
     account_manager,

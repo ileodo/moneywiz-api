@@ -3,8 +3,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Any, Callable, Tuple
 
-from src.moneywiz_api.model.record import Record
-from src.moneywiz_api.types import ENT_ID, ID
+from moneywiz_api.model.record import Record
+from moneywiz_api.types import ENT_ID, ID
 
 
 class DatabaseAccessor:

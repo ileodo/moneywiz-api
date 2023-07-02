@@ -1,8 +1,8 @@
 from typing import Dict, Callable, List
 
-from src.moneywiz_api.model.category import Category
-from src.moneywiz_api.managers.record_manager import RecordManager
-from src.moneywiz_api.types import ID
+from moneywiz_api.model.category import Category
+from moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.types import ID
 
 
 class CategoryManager(RecordManager[Category]):

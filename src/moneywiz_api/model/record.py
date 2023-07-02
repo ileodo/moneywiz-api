@@ -1,7 +1,7 @@
 from dataclasses import dataclass, asdict, field
 from typing import Dict, Any
 
-from src.moneywiz_api.types import ID, ENT_ID
+from moneywiz_api.types import ID, ENT_ID
 
 
 @dataclass
