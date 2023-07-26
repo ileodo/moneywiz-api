@@ -13,6 +13,7 @@ class Transaction(Record, ABC):
     """
     ENT: 36
     """
+    reconciled: bool
 
     amount: float
     description: str
@@ -21,12 +22,14 @@ class Transaction(Record, ABC):
 
     def __init__(self, row):
         super().__init__(row)
+        self.reconciled = row["ZRECONCILED"] == 1
         self.amount = row["ZAMOUNT1"]
         self.description = row["ZDESC2"]
         self.date = row["ZDATE1"]
         self.notes = row["ZNOTES1"]
 
         # Validate
+        assert self.reconciled is not None
         assert self.amount is not None
         assert self.description is not None
         assert self.date is not None
