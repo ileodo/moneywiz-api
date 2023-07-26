@@ -13,6 +13,7 @@ class Transaction(Record, ABC):
     """
     ENT: 36
     """
+
     reconciled: bool
 
     amount: float
