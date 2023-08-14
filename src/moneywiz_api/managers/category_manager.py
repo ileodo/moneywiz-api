@@ -2,7 +2,7 @@ from typing import Dict, Callable, List
 
 from moneywiz_api.model.category import Category
 from moneywiz_api.managers.record_manager import RecordManager
-from moneywiz_api.types import ID
+from moneywiz_api.types import ID, GID
 
 
 class CategoryManager(RecordManager[Category]):
@@ -25,6 +25,10 @@ class CategoryManager(RecordManager[Category]):
             else:
                 current = self.get(current.parentId)
         return ret
+
+    def get_name_chain_by_gid(self, category_gid: GID) -> List[str]:
+        current = self.get_by_gid(category_gid)
+        return self.get_name_chain(current.id)
 
     def get_categories_for_user(self, user_id: ID) -> List[Category]:
         return sorted(

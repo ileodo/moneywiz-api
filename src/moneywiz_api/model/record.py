@@ -9,21 +9,21 @@ class Record:
     _raw: Dict[str, Any] = field(repr=False)
     _ent: ENT_ID = field(repr=False)
     _created_at: float = field(repr=False)
-    _gid: str = field(repr=False)
+    gid: str = field(repr=False)
     id: ID
 
     def __init__(self, row):
         self._raw = row
         self._ent = row["Z_ENT"]
         self._created_at = row["ZOBJECTCREATIONDATE"]
-        self._gid = row["ZGID"]
+        self.gid = row["ZGID"]
         self.id = row["Z_PK"]
 
         # Validate
         assert self._raw
         assert self._ent
         assert self._created_at
-        assert self._gid
+        assert self.gid
         assert self.id
 
     def ent(self) -> ENT_ID:
@@ -64,5 +64,4 @@ class Record:
         del original["_raw"]
         del original["_ent"]
         del original["_created_at"]
-        del original["_gid"]
         return original

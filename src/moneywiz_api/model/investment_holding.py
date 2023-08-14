@@ -20,6 +20,8 @@ class InvestmentHolding(Record):
     holding_type: Optional[str]
     description: str
 
+    price_per_share_available_online: bool
+
     """
     Unsure about the usage.
     value can be 0,1
@@ -46,6 +48,9 @@ class InvestmentHolding(Record):
         self.symbol = row["ZSYMBOL"]
         self.holding_type = row["ZHOLDINGTYPE"]
         self.description = row["ZDESC"]
+        self.price_per_share_available_online = (
+            row["ZISPRICEPERSHAREAVAILABLEONLINE"] == 1
+        )
 
         self._investment_object_type = row["ZINVESTMENTOBJECTTYPE"]
         self._cost_basis_of_missing_ob_shares = row["ZISFROMONLINEBANKING"]
