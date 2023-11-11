@@ -55,9 +55,7 @@ class TransactionManager(RecordManager[Transaction]):
     ) -> List[Tuple[ID, float]] | None:
         return self.category_assignment.get(transaction_id)
 
-    def tags_for_transaction(
-        self, transaction_id: ID
-    ) -> List[ID] | None:
+    def tags_for_transaction(self, transaction_id: ID) -> List[ID] | None:
         return self.tags_map.get(transaction_id)
 
     def original_transaction_for_refund_transaction(

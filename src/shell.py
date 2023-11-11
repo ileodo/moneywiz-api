@@ -1,5 +1,5 @@
-
 import sys, os
+
 print(sys.path)
 print(os.environ["PYTHONPATH"])
 
@@ -39,7 +39,7 @@ moneywizApi = MoneywizApi(Path(DB_PATH))
     moneywizApi.category_manager,
     moneywizApi.transaction_manager,
     moneywizApi.investment_holding_manager,
-    moneywizApi.tag_manager
+    moneywizApi.tag_manager,
 )
 
 

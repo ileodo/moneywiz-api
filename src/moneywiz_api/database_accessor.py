@@ -110,4 +110,3 @@ class DatabaseAccessor:
         for row in res.fetchall():
             transactions_to_tags[row["Z_36TRANSACTIONS"]].append(row["Z_35TAGS"])
         return transactions_to_tags
-
