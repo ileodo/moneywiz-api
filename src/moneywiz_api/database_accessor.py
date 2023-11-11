@@ -97,3 +97,17 @@ class DatabaseAccessor:
         for row in res.fetchall():
             refund_to_withdraw[row["ZREFUNDTRANSACTION"]] = row["ZWITHDRAWTRANSACTION"]
         return refund_to_withdraw
+
+    def get_tags_map(self) -> Dict[ID, List[ID]]:
+        transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
+        cur = self._con.cursor()
+        res = cur.execute(
+            """
+        SELECT Z_36TRANSACTIONS, Z_35TAGS FROM  Z_36TAGS
+        
+        """
+        )
+        for row in res.fetchall():
+            transactions_to_tags[row["Z_36TRANSACTIONS"]].append(row["Z_35TAGS"])
+        return transactions_to_tags
+

@@ -1,5 +1,4 @@
 
-
 MONEYWIZ_DB_PATH?="/Users/$(shell whoami)/Library/Containers/com.moneywiz.personalfinance/Data/Documents/.AppData/ipadMoneyWiz.sqlite"
 
 .venv/bin/activate:
@@ -24,7 +23,7 @@ format:
 	.venv/bin/python -m black -l 88 src tests
 
 shell:
-	.venv/bin/python src/moneywiz_api/shell.py ${MONEYWIZ_DB_PATH}
+	.venv/bin/python src/shell.py ${MONEYWIZ_DB_PATH}
 
 package:
 	.venv/bin/python -m build
