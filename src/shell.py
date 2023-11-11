@@ -1,3 +1,8 @@
+import sys, os
+
+print(sys.path)
+print(os.environ["PYTHONPATH"])
+
 import pathlib
 import sys
 from dataclasses import asdict
@@ -26,6 +31,7 @@ moneywizApi = MoneywizApi(Path(DB_PATH))
     category_manager,
     transaction_manager,
     investment_holding_manager,
+    tag_manager,
 ) = (
     moneywizApi.accessor,
     moneywizApi.account_manager,
@@ -33,6 +39,7 @@ moneywizApi = MoneywizApi(Path(DB_PATH))
     moneywizApi.category_manager,
     moneywizApi.transaction_manager,
     moneywizApi.investment_holding_manager,
+    moneywizApi.tag_manager,
 )
 
 

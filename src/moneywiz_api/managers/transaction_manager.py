@@ -25,6 +25,7 @@ class TransactionManager(RecordManager[Transaction]):
         super().__init__()
         self.category_assignment: Dict[ID, List[Tuple[ID, float]]] = {}
         self.refund_maps: Dict[ID, ID] = {}
+        self.tags_map: Dict[ID, ID] = {}
 
     @property
     def ents(self) -> Dict[str, Callable]:
@@ -47,11 +48,15 @@ class TransactionManager(RecordManager[Transaction]):
             ID, List[Tuple[ID, float]]
         ] = db_accessor.get_category_assignment()
         self.refund_maps: Dict[ID, ID] = db_accessor.get_refund_maps()
+        self.tags_map: Dict[ID, ID] = db_accessor.get_tags_map()
 
     def category_for_transaction(
         self, transaction_id: ID
     ) -> List[Tuple[ID, float]] | None:
         return self.category_assignment.get(transaction_id)
+
+    def tags_for_transaction(self, transaction_id: ID) -> List[ID] | None:
+        return self.tags_map.get(transaction_id)
 
     def original_transaction_for_refund_transaction(
         self, transaction_id: ID

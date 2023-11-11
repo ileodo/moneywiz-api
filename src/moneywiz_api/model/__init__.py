@@ -14,6 +14,7 @@ from moneywiz_api.model.account import (
 from moneywiz_api.model.category import Category
 from moneywiz_api.model.investment_holding import InvestmentHolding
 from moneywiz_api.model.payee import Payee
+from moneywiz_api.model.tag import Tag
 from moneywiz_api.model.transaction import (
     RefundTransaction,
     Transaction,
@@ -43,6 +44,7 @@ __all__ = [
     "Category",
     "InvestmentHolding",
     "Payee",
+    "Tag",
     "RefundTransaction",
     "Transaction",
     "WithdrawTransaction",
