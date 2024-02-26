@@ -306,9 +306,8 @@ class TransferDepositTransaction(Transaction):
 
         assert self.original_exchange_rate is not None
 
-        assert self.amount == pytest.approx(
-            abs(self.original_amount),
-            abs=0.001,
+        assert self.amount == abs(
+            self.original_amount
         )  # sign of original_amount could be wrong, need DB cleanup
         assert self.amount == pytest.approx(
             -self.sender_amount * self.original_exchange_rate,
