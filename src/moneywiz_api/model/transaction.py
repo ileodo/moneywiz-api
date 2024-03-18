@@ -50,7 +50,7 @@ class DepositTransaction(Transaction):
     # FX
     original_currency: str
     original_amount: float  # neg: expense, pos: income
-    original_exchange_rate: float
+    original_exchange_rate: Optional[float]
 
     def __init__(self, row):
         super().__init__(row)
@@ -70,12 +70,10 @@ class DepositTransaction(Transaction):
         # self.payee can be None
         assert self.original_currency is not None
         assert self.original_amount is not None
-        assert self.original_exchange_rate is not None
 
         assert self.amount * self.original_amount > 0  # Same sign
-        assert (
-            self.amount == self.original_amount * self.original_exchange_rate
-        )  # Same sign
+        if self.original_exchange_rate is not None:
+            assert self.amount == self.original_amount * self.original_exchange_rate
 
 
 @dataclass
@@ -125,6 +123,9 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         self.number_of_shares = row["ZNUMBEROFSHARES1"]
         self.price_per_share = row["ZPRICEPERSHARE1"]
 
+        # Fixes
+        self.fee = max(self.fee, 0)
+
         # Validate
         self.validate()
 
@@ -133,7 +134,7 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.amount is not None
         assert self.amount <= 0
         assert self.fee is not None
-        # assert self.fee >= 0 # Need DB Clean UP
+        assert self.fee >= 0
         # Either tiny (close to 0) or positive
         assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
         assert self.investment_holding is not None
@@ -172,6 +173,9 @@ class InvestmentSellTransaction(InvestmentTransaction):
         self.number_of_shares = row["ZNUMBEROFSHARES1"]
         self.price_per_share = row["ZPRICEPERSHARE1"]
 
+        # Fixes
+        self.fee = max(self.fee, 0)
+
         # Validate
         self.validate()
 
@@ -180,7 +184,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.amount is not None
 
         assert self.fee is not None
-        # assert self.fee >= 0 # Need DB Clean UP
+        assert self.fee >= 0
         # Either tiny (close to 0) or positive
         assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
 
@@ -267,11 +271,14 @@ class TransferDepositTransaction(Transaction):
     sender_account: ID
     sender_transaction: ID
 
-    original_amount: float  # ATTENTION: should ignore sign
+    original_amount: float  # ATTENTION: sign got fixed
     original_currency: str
 
     sender_amount: float
     sender_currency: str
+
+    original_fee: Optional[float]
+    original_fee_currency: Optional[str]
 
     original_exchange_rate: float
 
@@ -287,7 +294,14 @@ class TransferDepositTransaction(Transaction):
         self.original_currency = row["ZORIGINALCURRENCY"]
         self.sender_amount = row["ZORIGINALSENDERAMOUNT"]
         self.sender_currency = row["ZORIGINALSENDERCURRENCY"]
+
+        self.original_fee = row["ZORIGINALFEE"]
+        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+
         self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+
+        # Fixes
+        self.original_amount = abs(self.original_amount)
 
         # Validate
         self.validate()
@@ -299,18 +313,21 @@ class TransferDepositTransaction(Transaction):
         assert self.sender_account is not None
         assert self.sender_transaction is not None
         assert self.original_amount is not None
+        assert self.original_amount > 0
         assert self.original_currency is not None
         assert self.sender_amount is not None
         assert self.sender_amount <= 0
         assert self.sender_currency is not None
 
+        if self.original_fee is not None and self.original_fee != 0:
+            assert self.original_fee_currency is not None
+
         assert self.original_exchange_rate is not None
 
-        assert self.amount == abs(
-            self.original_amount
-        )  # sign of original_amount could be wrong, need DB cleanup
-        assert self.amount == pytest.approx(
-            -self.sender_amount * self.original_exchange_rate,
+        # assert self.amount ==  self.original_amount # original_amount could be different with amount ZCURRENCYEXCHANGERATE is playing up
+        assert self.original_amount == pytest.approx(
+            -self.sender_amount * self.original_exchange_rate
+            - (self.original_fee or 0),
             abs=0.001,
         )
 
@@ -327,11 +344,14 @@ class TransferWithdrawTransaction(Transaction):
     recipient_account: ID
     recipient_transaction: ID
 
-    original_amount: float  # ATTENTION: should ignore sign
+    original_amount: float  # always neg
     original_currency: str
 
-    recipient_amount: float  # ATTENTION: sign could be wrong
+    recipient_amount: float  # ATTENTION: sign got fixed
     recipient_currency: str
+
+    original_fee: Optional[float]
+    original_fee_currency: Optional[str]
 
     original_exchange_rate: float
 
@@ -347,7 +367,14 @@ class TransferWithdrawTransaction(Transaction):
         self.original_currency = row["ZORIGINALCURRENCY"]
         self.recipient_amount = row["ZORIGINALRECIPIENTAMOUNT"]
         self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
+
+        self.original_fee = row["ZORIGINALFEE"]
+        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+
         self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+
+        # Fixes
+        self.recipient_amount = abs(self.recipient_amount)
 
         # Validate
         self.validate()
@@ -359,19 +386,22 @@ class TransferWithdrawTransaction(Transaction):
         assert self.recipient_account is not None
         assert self.recipient_transaction is not None
         assert self.original_amount is not None
+        assert self.original_amount < 0
         assert self.original_currency is not None
         assert self.recipient_amount is not None
-        # assert self.recipient_amount > 0  # Not Guaranteed
+        assert self.recipient_amount > 0
         assert self.recipient_currency is not None
+
+        if self.original_fee is not None and self.original_fee != 0:
+            assert self.original_fee_currency is not None
 
         assert self.original_exchange_rate is not None
 
         assert self.amount == self.original_amount
         assert self.amount == pytest.approx(
-            -abs(self.recipient_amount)  # recipient_amount sign could be wrong
-            / self.original_exchange_rate,
+            -self.recipient_amount / self.original_exchange_rate,
             abs=0.001,
-        ), self.filtered()
+        )
 
 
 @dataclass
@@ -386,8 +416,8 @@ class WithdrawTransaction(Transaction):
 
     # FX
     original_currency: str
-    original_amount: float  # neg: expense, pos: income
-    original_exchange_rate: float
+    original_amount: float  # neg: expense, pos: income ATTENTION: sign got fixed
+    original_exchange_rate: Optional[float]
 
     def __init__(self, row):
         super().__init__(row)
@@ -399,6 +429,10 @@ class WithdrawTransaction(Transaction):
         self.original_amount = row["ZORIGINALAMOUNT"]
         self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
 
+        # Fixes
+        if self.amount * self.original_amount < 0:
+            self.original_amount = -self.original_amount
+
         # Validate
         self.validate()
 
@@ -408,9 +442,10 @@ class WithdrawTransaction(Transaction):
         # self.payee can be None
         assert self.original_currency is not None
         assert self.original_amount is not None
-        assert self.original_exchange_rate is not None
 
-        # assert self.amount * self.original_amount > 0  # Same sign not guaranteed
-        assert abs(self.amount) == pytest.approx(
-            abs(self.original_amount * self.original_exchange_rate), abs=0.001
-        )  # Same sign
+        assert self.amount * self.original_amount > 0
+
+        if self.original_exchange_rate is not None:
+            assert self.amount == pytest.approx(
+                self.original_amount * self.original_exchange_rate, abs=0.001
+            )
