@@ -235,7 +235,7 @@ class RefundTransaction(Transaction):
 
     # FX
     original_currency: str
-    original_amount: float 
+    original_amount: float
     original_exchange_rate: Optional[float]
 
     def __init__(self, row):
@@ -264,6 +264,7 @@ class RefundTransaction(Transaction):
             assert self.amount == pytest.approx(
                 self.original_amount * self.original_exchange_rate, abs=0.001
             )
+
 
 @dataclass
 class TransferBudgetTransaction(Transaction):
