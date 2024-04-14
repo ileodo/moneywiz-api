@@ -233,11 +233,20 @@ class RefundTransaction(Transaction):
     amount: float
     payee: Optional[ID]
 
+    # FX
+    original_currency: str
+    original_amount: float 
+    original_exchange_rate: Optional[float]
+
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
         self.amount = row["ZAMOUNT1"]
         self.payee = row["ZPAYEE2"]
+
+        self.original_currency = row["ZORIGINALCURRENCY"]
+        self.original_amount = row["ZORIGINALAMOUNT"]
+        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
 
         # Validate
         self.validate()
@@ -247,6 +256,14 @@ class RefundTransaction(Transaction):
         assert self.amount is not None
         assert self.amount > 0
 
+        assert self.original_currency is not None
+        assert self.original_amount is not None
+        assert self.original_amount > 0
+
+        if self.original_exchange_rate is not None:
+            assert self.amount == pytest.approx(
+                self.original_amount * self.original_exchange_rate, abs=0.001
+            )
 
 @dataclass
 class TransferBudgetTransaction(Transaction):
