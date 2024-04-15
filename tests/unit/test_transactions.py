@@ -126,7 +126,16 @@ def test_all_transfer_deposit_transaction(
     assert transfer_deposit_transaction.original_currency == to_account.currency
     assert transfer_deposit_transaction.sender_currency == from_account.currency
 
-    assert transfer_deposit_transaction.sender_amount == withdraw_transaction.amount
+    if (
+        transfer_deposit_transaction.original_fee_currency
+        == transfer_deposit_transaction.sender_currency
+    ):
+        assert (
+            transfer_deposit_transaction.sender_amount
+            - transfer_deposit_transaction.original_fee
+        ) == withdraw_transaction.amount
+    else:
+        assert transfer_deposit_transaction.sender_amount == withdraw_transaction.amount
     assert (
         transfer_deposit_transaction.sender_currency
         == withdraw_transaction.original_currency
@@ -156,10 +165,17 @@ def test_all_transfer_withdraw_transaction(
     assert transfer_withdraw_transaction.original_currency == from_account.currency
     assert transfer_withdraw_transaction.recipient_currency == to_account.currency
 
-    assert (
-        abs(transfer_withdraw_transaction.recipient_amount)
-        == deposit_transaction.amount
-    )
+    if (
+        transfer_withdraw_transaction.original_fee_currency
+        == transfer_withdraw_transaction.recipient_currency
+    ):
+        assert abs(transfer_withdraw_transaction.recipient_amount) == abs(
+            deposit_transaction.amount + transfer_withdraw_transaction.original_fee
+        )
+    else:
+        assert transfer_withdraw_transaction.recipient_amount == pytest.approx(
+            deposit_transaction.amount, abs=0.001
+        )
     assert (
         transfer_withdraw_transaction.recipient_currency
         == deposit_transaction.original_currency

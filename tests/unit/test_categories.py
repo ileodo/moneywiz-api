@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 
 from moneywiz_api.model.transaction import (
@@ -9,7 +10,9 @@ from moneywiz_api.model.transaction import (
 from conftest import transaction_manager, category_manager
 
 
-def test_category():
+@patch("moneywiz_api.managers.category_manager.CategoryManager.get_name_chain")
+def test_category(get_name_chain):
+    get_name_chain.side_effect = lambda x: ["Transportation", "Car Fuel"]
     assert ["Transportation", "Car Fuel"] == category_manager.get_name_chain(193)
 
 

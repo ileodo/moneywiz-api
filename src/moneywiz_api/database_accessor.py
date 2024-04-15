@@ -1,3 +1,5 @@
+import logging
+import re
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
@@ -5,6 +7,9 @@ from typing import Dict, List, Any, Callable, Tuple
 
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ENT_ID, ID
+
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseAccessor:
@@ -32,7 +37,9 @@ class DatabaseAccessor:
         """
         )
         ent_to_typename: Dict[int, str] = {}
+        logger.debug("Entities found in the Database:")
         for row in res.fetchall():
+            logger.debug(f"({row['Z_ENT']}) {row['Z_NAME']}")
             ent_to_typename[row["Z_ENT"]] = row["Z_NAME"]
         return ent_to_typename
 
@@ -63,7 +70,7 @@ class DatabaseAccessor:
         res = cur.execute(
             """
         SELECT * FROM ZSYNCOBJECT WHERE Z_PK = ?
-        
+
         """,
             [pk_id],
         )
@@ -76,7 +83,7 @@ class DatabaseAccessor:
         res = cur.execute(
             """
         SELECT ZCATEGORY, ZTRANSACTION, ZAMOUNT  FROM ZCATEGORYASSIGMENT WHERE ZTRANSACTION IS NOT NULL
-        
+
         """
         )
         for row in res.fetchall():
@@ -91,22 +98,48 @@ class DatabaseAccessor:
         res = cur.execute(
             """
         SELECT ZREFUNDTRANSACTION, ZWITHDRAWTRANSACTION  FROM ZWITHDRAWREFUNDTRANSACTIONLINK
-        
+
         """
         )
         for row in res.fetchall():
             refund_to_withdraw[row["ZREFUNDTRANSACTION"]] = row["ZWITHDRAWTRANSACTION"]
         return refund_to_withdraw
 
+    def find_tags_map(self) -> Tuple[str, str, str]:
+        cur0 = self._con.cursor()
+        res0 = cur0.execute(
+            """
+        SELECT name FROM sqlite_master WHERE type='table' AND name like 'Z_%TAGS'
+
+        """
+        )
+        for row0 in res0.fetchall():
+            cur1 = self._con.cursor()
+            res1 = cur1.execute("PRAGMA table_info({})".format(row0["name"]))
+            tag_map_score = 0
+            tag_transactions_key = None
+            tag_tags_key = None
+            for row1 in res1.fetchall():
+                if re.match(r"^Z_[0-9]{2}TRANSACTIONS$", row1["name"]):
+                    tag_map_score += 1
+                    tag_transactions_key = row1["name"]
+                elif re.match(r"^Z_[0-9]{2}TAGS$", row1["name"]):
+                    tag_map_score += 1
+                    tag_tags_key = row1["name"]
+
+            if tag_map_score == 2:
+                return row0["name"], tag_transactions_key, tag_tags_key
+
+        return None, None, None
+
     def get_tags_map(self) -> Dict[ID, List[ID]]:
+        tags_table, transaction_col, tags_col = self.find_tags_map()
         transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
         cur = self._con.cursor()
         res = cur.execute(
-            """
-        SELECT Z_36TRANSACTIONS, Z_35TAGS FROM  Z_36TAGS
-        
-        """
+            "SELECT {}, {} FROM {}".format(transaction_col, tags_col, tags_table)
         )
+
         for row in res.fetchall():
-            transactions_to_tags[row["Z_36TRANSACTIONS"]].append(row["Z_35TAGS"])
+            transactions_to_tags[row[transaction_col]].append(row[tags_col])
         return transactions_to_tags

@@ -18,10 +18,11 @@ class Category(Record):
 
     def __init__(self, row):
         super().__init__(row)
-        self.name = row["ZNAME2"]
-        self.parentId = row["ZPARENTCATEGORY"]
-        self.type = self._convert_type(row["ZTYPE2"])
-        self.user = row["ZUSER3"]
+
+        self.parentId = self.get_column_value("PARENTCATEGORY")
+        self.name = self.get_column_value("NAME")
+        self.type = self._convert_type(self.get_column_value("TYPE"))
+        self.user = self.get_column_value("USER")
 
         # Validate
         assert self.name is not None

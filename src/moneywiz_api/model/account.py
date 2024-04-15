@@ -1,8 +1,12 @@
+import logging
 from abc import ABC
 from dataclasses import dataclass, field
 
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -22,15 +26,15 @@ class Account(Record, ABC):
 
     def __init__(self, row):
         super().__init__(row)
-        self._display_order = row["ZDISPLAYORDER"]
-        self._group_id = row["ZGROUPID"]
+        self._display_order = self.get_column_value("DISPLAYORDER")
+        self._group_id = self.get_column_value("GROUPID")
 
-        self.name = row["ZNAME"]
-        self.currency = row["ZCURRENCYNAME"]
-        self.opening_balance = row["ZOPENINGBALANCE"]
-        self.info = row["ZINFO"]
+        self.name = self.get_column_value("NAME")
+        self.currency = self.get_column_value("CURRENCYNAME")
+        self.opening_balance = self.get_column_value("OPENINGBALANCE")
+        self.info = self.get_column_value("INFO")
 
-        self.user = row["ZUSER"]
+        self.user = self.get_column_value("USER")
 
         # Validate
         assert self.name is not None
@@ -76,14 +80,17 @@ class CreditCardAccount(Account):
     ENT: 13
     """
 
-    statement_day: int  # day in the month
+    statement_day: int = None  # day in the month
 
     def __init__(self, row):
         super().__init__(row)
-        self.statement_day = row["ZSTATEMENTENDDAY"]
+        try:
+            self.statement_day = row["ZSTATEMENTENDDAY"]
 
-        # Validate
-        assert self.statement_day is not None
+            # Validate
+            assert self.statement_day is not None
+        except KeyError:
+            logger.debug("ZSTATEMENTENDDAY column not found. Is this MoneyWiz 3?")
 
 
 @dataclass

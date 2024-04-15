@@ -23,11 +23,11 @@ class Transaction(Record, ABC):
 
     def __init__(self, row):
         super().__init__(row)
-        self.reconciled = row["ZRECONCILED"] == 1
-        self.amount = row["ZAMOUNT1"]
-        self.description = row["ZDESC2"]
-        self.date = row["ZDATE1"]
-        self.notes = row["ZNOTES1"]
+        self.reconciled = self.get_column_value("RECONCILED") == 1
+        self.amount = self.get_column_value("AMOUNT")
+        self.description = self.get_column_value("DESC")
+        self.date = self.get_column_value("DATE")
+        self.notes = self.get_column_value("NOTES")
 
         # Validate
         assert self.reconciled is not None
@@ -54,12 +54,12 @@ class DepositTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
-        self.payee = row["ZPAYEE2"]
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
+        self.payee = self.get_column_value("PAYEE")
+        self.original_currency = self.get_column_value("ORIGINALCURRENCY")
+        self.original_amount = self.get_column_value("ORIGINALAMOUNT")
+        self.original_exchange_rate = self.get_column_value("ORIGINALEXCHANGERATE")
 
         # Validate
         self.validate()
@@ -73,7 +73,9 @@ class DepositTransaction(Transaction):
 
         assert self.amount * self.original_amount > 0  # Same sign
         if self.original_exchange_rate is not None:
-            assert self.amount == self.original_amount * self.original_exchange_rate
+            assert self.amount == pytest.approx(
+                self.original_amount * self.original_exchange_rate, abs=0.001
+            )
 
 
 @dataclass
@@ -114,14 +116,14 @@ class InvestmentBuyTransaction(InvestmentTransaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
 
-        self.fee = row["ZFEE2"]
+        self.fee = self.get_column_value("FEE")
 
-        self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = row["ZNUMBEROFSHARES1"]
-        self.price_per_share = row["ZPRICEPERSHARE1"]
+        self.investment_holding = self.get_column_value("INVESTMENTHOLDING")
+        self.number_of_shares = self.get_column_value("NUMBEROFSHARES")
+        self.price_per_share = self.get_column_value("PRICEPERSHARE")
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -164,14 +166,14 @@ class InvestmentSellTransaction(InvestmentTransaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
 
-        self.fee = row["ZFEE2"]
+        self.fee = self.get_column_value("FEE")
 
-        self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = row["ZNUMBEROFSHARES1"]
-        self.price_per_share = row["ZPRICEPERSHARE1"]
+        self.investment_holding = self.get_column_value("INVESTMENTHOLDING")
+        self.number_of_shares = self.get_column_value("NUMBEROFSHARES")
+        self.price_per_share = self.get_column_value("PRICEPERSHARE")
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -210,9 +212,9 @@ class ReconcileTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
-        self.reconcile_amount = row["ZRECONCILEAMOUNT"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
+        self.reconcile_amount = self.get_column_value("RECONCILEAMOUNT")
 
         # Validate
         self.validate()
@@ -235,9 +237,9 @@ class RefundTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
-        self.payee = row["ZPAYEE2"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
+        self.payee = self.get_column_value("PAYEE")
 
         # Validate
         self.validate()
@@ -284,21 +286,21 @@ class TransferDepositTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
 
-        self.sender_account = row["ZSENDERACCOUNT"]
-        self.sender_transaction = row["ZSENDERTRANSACTION"]
+        self.sender_account = self.get_column_value("SENDERACCOUNT")
+        self.sender_transaction = self.get_column_value("SENDERTRANSACTION")
 
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.sender_amount = row["ZORIGINALSENDERAMOUNT"]
-        self.sender_currency = row["ZORIGINALSENDERCURRENCY"]
+        self.original_amount = self.get_column_value("ORIGINALAMOUNT")
+        self.original_currency = self.get_column_value("ORIGINALCURRENCY")
+        self.sender_amount = self.get_column_value("ORIGINALSENDERAMOUNT")
+        self.sender_currency = self.get_column_value("ORIGINALSENDERCURRENCY")
 
-        self.original_fee = row["ZORIGINALFEE"]
-        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+        self.original_fee = self.get_column_value("ORIGINALFEE")
+        self.original_fee_currency = self.get_column_value("ORIGINALFEECURRENCY")
 
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_exchange_rate = self.get_column_value("ORIGINALEXCHANGERATE")
 
         # Fixes
         self.original_amount = abs(self.original_amount)
@@ -325,11 +327,15 @@ class TransferDepositTransaction(Transaction):
         assert self.original_exchange_rate is not None
 
         # assert self.amount ==  self.original_amount # original_amount could be different with amount ZCURRENCYEXCHANGERATE is playing up
-        assert self.original_amount == pytest.approx(
-            -self.sender_amount * self.original_exchange_rate
-            - (self.original_fee or 0),
-            abs=0.001,
-        )
+        if self.original_fee_currency == self.sender_currency:
+            assert self.sender_amount == pytest.approx(
+                -self.original_amount / self.original_exchange_rate, abs=0.001
+            )
+
+        else:
+            assert self.original_amount == pytest.approx(
+                -self.sender_amount * self.original_exchange_rate, abs=0.001
+            )
 
 
 @dataclass
@@ -357,21 +363,21 @@ class TransferWithdrawTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
 
-        self.recipient_account = row["ZRECIPIENTACCOUNT1"]
-        self.recipient_transaction = row["ZRECIPIENTTRANSACTION"]
+        self.recipient_account = self.get_column_value("RECIPIENTACCOUNT")
+        self.recipient_transaction = self.get_column_value("RECIPIENTTRANSACTION")
 
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.recipient_amount = row["ZORIGINALRECIPIENTAMOUNT"]
-        self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
+        self.original_amount = self.get_column_value("ORIGINALAMOUNT")
+        self.original_currency = self.get_column_value("ORIGINALCURRENCY")
+        self.recipient_amount = self.get_column_value("ORIGINALRECIPIENTAMOUNT")
+        self.recipient_currency = self.get_column_value("ORIGINALRECIPIENTCURRENCY")
 
-        self.original_fee = row["ZORIGINALFEE"]
-        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+        self.original_fee = self.get_column_value("ORIGINALFEE")
+        self.original_fee_currency = self.get_column_value("ORIGINALFEECURRENCY")
 
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_exchange_rate = self.get_column_value("ORIGINALEXCHANGERATE")
 
         # Fixes
         self.recipient_amount = abs(self.recipient_amount)
@@ -397,11 +403,21 @@ class TransferWithdrawTransaction(Transaction):
 
         assert self.original_exchange_rate is not None
 
-        assert self.amount == self.original_amount
-        assert self.amount == pytest.approx(
-            -self.recipient_amount / self.original_exchange_rate,
-            abs=0.001,
-        )
+        if self.original_fee_currency == self.recipient_currency:
+            assert self.amount == self.original_amount
+
+            assert self.amount == pytest.approx(
+                -self.recipient_amount / self.original_exchange_rate, abs=0.001
+            )
+
+        else:
+            assert self.original_amount == pytest.approx(
+                self.amount + self.original_fee, abs=0.001
+            )
+
+            assert (self.amount + self.original_fee) == pytest.approx(
+                -self.recipient_amount / self.original_exchange_rate, abs=0.001
+            )
 
 
 @dataclass
@@ -421,13 +437,13 @@ class WithdrawTransaction(Transaction):
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
-        self.payee = row["ZPAYEE2"]
+        self.account = self.get_column_value("ACCOUNT")
+        self.amount = self.get_column_value("AMOUNT")
+        self.payee = self.get_column_value("PAYEE")
 
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_currency = self.get_column_value("ORIGINALCURRENCY")
+        self.original_amount = self.get_column_value("ORIGINALAMOUNT")
+        self.original_exchange_rate = self.get_column_value("ORIGINALEXCHANGERATE")
 
         # Fixes
         if self.amount * self.original_amount < 0:

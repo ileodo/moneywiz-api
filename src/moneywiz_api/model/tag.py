@@ -15,8 +15,8 @@ class Tag(Record):
 
     def __init__(self, row):
         super().__init__(row)
-        self.name = row["ZNAME6"]
-        self.user = row["ZUSER8"]
+        self.name = self.get_column_value("NAME")
+        self.user = self.get_column_value("USER")
 
         # Validate
         assert self.name is not None

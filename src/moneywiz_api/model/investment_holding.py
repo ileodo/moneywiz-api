@@ -25,8 +25,8 @@ class InvestmentHolding(Record):
     """
     Unsure about the usage.
     value can be 0,1
-    
-    seems like: 
+
+    seems like:
         0 -> aggregate balance from all transactions
         1 -> use number_of_shares as balance
     """
@@ -34,26 +34,28 @@ class InvestmentHolding(Record):
 
     """
     Unsure
-    
+
     seems like the the cost for the shares which is not from transactions
     """
     _cost_basis_of_missing_ob_shares: float = field(repr=False)
 
     def __init__(self, row):
         super().__init__(row)
-        self.account = row["ZINVESTMENTACCOUNT"]
-        self.opening_number_of_shares = row["ZOPENNINGNUMBEROFSHARES"]
-        self.number_of_shares = row["ZNUMBEROFSHARES"]
-        # self.price_per_share = row["ZPRICEPERSHARE"]
-        self.symbol = row["ZSYMBOL"]
-        self.holding_type = row["ZHOLDINGTYPE"]
-        self.description = row["ZDESC"]
+        self.account = self.get_column_value("INVESTMENTACCOUNT")
+        self.opening_number_of_shares = self.get_column_value("OPENNINGNUMBEROFSHARES")
+        self.number_of_shares = self.get_column_value("NUMBEROFSHARES")
+        # self.price_per_share = self.get_column_value("ZPRICEPERSHARE")
+        self.symbol = self.get_column_value("SYMBOL")
+        self.holding_type = self.get_column_value("HOLDINGTYPE")
+        self.description = self.get_column_value("DESC")
         self.price_per_share_available_online = (
-            row["ZISPRICEPERSHAREAVAILABLEONLINE"] == 1
+            self.get_column_value("ISPRICEPERSHAREAVAILABLEONLINE") == 1
         )
 
-        self._investment_object_type = row["ZINVESTMENTOBJECTTYPE"]
-        self._cost_basis_of_missing_ob_shares = row["ZISFROMONLINEBANKING"]
+        self._investment_object_type = self.get_column_value("INVESTMENTOBJECTTYPE")
+        self._cost_basis_of_missing_ob_shares = self.get_column_value(
+            "ISFROMONLINEBANKING"
+        )
 
         # Validate
         self.validate()

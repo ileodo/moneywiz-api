@@ -10,6 +10,9 @@ from moneywiz_api.managers.investment_holding_manager import (
 from moneywiz_api.managers.payee_manager import PayeeManager
 from moneywiz_api.managers.transaction_manager import TransactionManager
 from moneywiz_api.managers.tag_manager import TagManager
+from moneywiz_api.managers.scheduled_transaction_manager import (
+    ScheduledTransactionManager,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +26,7 @@ class MoneywizApi:
         self.transaction_manager = TransactionManager()
         self.investment_holding_manager = InvestmentHoldingManager()
         self.tag_manager = TagManager()
+        self.scheduled_transaction_manager = ScheduledTransactionManager()
 
         self.load()
 
@@ -33,3 +37,4 @@ class MoneywizApi:
         self.transaction_manager.load(self.accessor)
         self.investment_holding_manager.load(self.accessor)
         self.tag_manager.load(self.accessor)
+        self.scheduled_transaction_manager.load(self.accessor)
