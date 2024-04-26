@@ -32,12 +32,10 @@ class AccountManager(RecordManager[Account]):
         }
 
     def records(self) -> Dict[ID, Account]:
-        return dict(
-            sorted(super().records().items(), key=lambda x: x[1]._display_order)
-        )
+        return dict(sorted(super().records().items(), key=lambda x: x[1].display_order))
 
     def get_accounts_for_user(self, user_id: ID) -> List[Account]:
         return sorted(
             [x for _, x in self.records().items() if x.user == user_id],
-            key=lambda x: (x._group_id, x._display_order),
+            key=lambda x: (x.group_id, x.display_order),
         )

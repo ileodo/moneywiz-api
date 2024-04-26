@@ -18,6 +18,8 @@ class Payee(Record):
         self.name = row["ZNAME5"]
         self.user = row["ZUSER7"]
 
+        # Fixes
+
         # Validate
-        assert self.name is not None
-        assert self.user is not None
+        assert self.name is not None, self.as_dict()
+        assert self.user is not None, self.as_dict()

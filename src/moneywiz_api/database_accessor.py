@@ -2,9 +2,11 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Any, Callable, Tuple
+from decimal import Decimal
 
 from moneywiz_api.model.record import Record
-from moneywiz_api.types import ENT_ID, ID
+from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.types import ENT_ID, ID, GID
 
 
 class DatabaseAccessor:
@@ -70,8 +72,20 @@ class DatabaseAccessor:
 
         return constructor(res.fetchone())
 
-    def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, float]]]:
-        transaction_map: Dict[ID, List[Tuple[ID, float]]] = defaultdict(list)
+    def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
+        cur = self._con.cursor()
+        res = cur.execute(
+            """
+        SELECT * FROM ZSYNCOBJECT WHERE ZGID = ?
+        
+        """,
+            [gid],
+        )
+
+        return constructor(res.fetchone())
+
+    def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, Decimal]]]:
+        transaction_map: Dict[ID, List[Tuple[ID, Decimal]]] = defaultdict(list)
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -81,7 +95,7 @@ class DatabaseAccessor:
         )
         for row in res.fetchall():
             transaction_map[row["ZTRANSACTION"]].append(
-                (row["ZCATEGORY"], row["ZAMOUNT"])
+                (row["ZCATEGORY"], RDH.get_decimal(row, "ZAMOUNT"))
             )
         return transaction_map
 
@@ -110,3 +124,16 @@ class DatabaseAccessor:
         for row in res.fetchall():
             transactions_to_tags[row["Z_36TRANSACTIONS"]].append(row["Z_35TAGS"])
         return transactions_to_tags
+
+    def get_users(self) -> Dict[ID, str]:
+        users_map: Dict[ID, str] = {}
+        cur = self._con.cursor()
+        res = cur.execute(
+            """
+        SELECT Z_PK, ZSYNCLOGIN FROM  "ZUSER"
+        
+        """
+        )
+        for row in res.fetchall():
+            users_map[row["Z_PK"]] = row["ZSYNCLOGIN"]
+        return users_map

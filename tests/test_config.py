@@ -1,6 +1,8 @@
 from datetime import datetime
 
-TEST_DB_PATH = "/Users/<USERNAME>/Library/Containers/com.moneywiz.personalfinance/Data/Documents/.AppData/ipadMoneyWiz.sqlite"
+from moneywiz_api.cli.cli import get_default_path
+
+TEST_DB_PATH = get_default_path()
 
 BALANCE_AS_OF_DATE = datetime(2023, 5, 19, 0, 0, 0)
 CASH_BALANCES = [

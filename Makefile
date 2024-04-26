@@ -1,35 +1,34 @@
 
-MONEYWIZ_DB_PATH?="/Users/$(shell whoami)/Library/Containers/com.moneywiz.personalfinance/Data/Documents/.AppData/ipadMoneyWiz.sqlite"
+VENV?=${VIRTUAL_ENV}
 
-.venv/bin/activate:
-	python3.10 -m venv .venv
+${VENV}/bin/activate:
+	python3.10 -m venv ${VENV}
 
-venv: .venv/bin/activate
+venv: ${VENV}/bin/activate
 
 install: requirements.txt requirements-dev.txt venv
-	.venv/bin/pip3 install -r requirements.txt
-	.venv/bin/pip3 install -r requirements-dev.txt
+	${VENV}/bin/pip3 install -e .
 
 test:
-	.venv/bin/python -m pytest tests
+	${VENV}/bin/python -m pytest tests
 
 pylint:
-	.venv/bin/python -m pylint --rcfile .pylintrc src
+	${VENV}/bin/python -m pylint --rcfile .pylintrc src
 
 mypy:
-	.venv/bin/python -m mypy src
+	${VENV}/bin/python -m mypy src
 
 format:
-	.venv/bin/python -m black -l 88 src tests
+	${VENV}/bin/python -m black -l 88 src tests
 
 shell:
-	.venv/bin/python src/shell.py ${MONEYWIZ_DB_PATH}
+	${VENV}/bin/python src/moneywiz_api/cli/cli.py
 
 package:
-	.venv/bin/python -m build
+	${VENV}/bin/python -m build
 
 test-publish:
-	.venv/bin/python -m twine upload --repository testpypi dist/*
+	${VENV}/bin/python -m twine upload --repository testpypi dist/*
 
 publish:
-	.venv/bin/python -m twine upload --repository pypi dist/*
+	${VENV}/bin/python -m twine upload --repository pypi dist/*
