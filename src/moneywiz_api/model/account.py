@@ -1,8 +1,10 @@
 from abc import ABC
 from dataclasses import dataclass, field
+from decimal import Decimal
 
-from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
+from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.model.record import Record
 
 
 @dataclass
@@ -11,33 +13,37 @@ class Account(Record, ABC):
     ENT: 9
     """
 
-    _display_order: int = field(repr=False)
-    _group_id: int = field(repr=False)
+    display_order: int = field(repr=False)
+    group_id: int = field(repr=False)
 
     name: str
     currency: str
-    opening_balance: float
+    opening_balance: Decimal  # might be a tiny number
     info: str
     user: ID
 
     def __init__(self, row):
         super().__init__(row)
-        self._display_order = row["ZDISPLAYORDER"]
-        self._group_id = row["ZGROUPID"]
+        self.display_order = row["ZDISPLAYORDER"]
+        self.group_id = row["ZGROUPID"]
 
         self.name = row["ZNAME"]
         self.currency = row["ZCURRENCYNAME"]
-        self.opening_balance = row["ZOPENINGBALANCE"]
+        self.opening_balance = RDH.get_decimal(row, "ZOPENINGBALANCE")
         self.info = row["ZINFO"]
 
         self.user = row["ZUSER"]
 
+        # Fixes
+
         # Validate
-        assert self.name is not None
-        assert self.currency is not None
-        assert self.opening_balance is not None
-        assert self.info is not None
-        assert self.user is not None
+        assert self.display_order is not None, self.as_dict()
+        assert self.group_id is not None, self.as_dict()
+        assert self.name is not None, self.as_dict()
+        assert self.currency is not None, self.as_dict()
+        assert self.opening_balance is not None, self.as_dict()
+        assert self.info is not None, self.as_dict()
+        assert self.user is not None, self.as_dict()
 
 
 @dataclass

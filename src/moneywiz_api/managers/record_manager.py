@@ -31,7 +31,7 @@ class RecordManager(ABC, Generic[T]):
     def add(self, record: T) -> None:
         self._records[record.id] = record
         if record.gid in self._gid_to_id:
-            raise Exception(
+            raise RuntimeError(
                 f"Duplicate gid for {record}, existing record Id {self._gid_to_id[record.gid]}"
             )
 

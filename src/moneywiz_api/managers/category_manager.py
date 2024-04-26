@@ -20,10 +20,10 @@ class CategoryManager(RecordManager[Category]):
         current = self.get(category_id)
         while current:
             ret.insert(0, current.name)
-            if not current.parentId:
+            if not current.parent_id:
                 break
             else:
-                current = self.get(current.parentId)
+                current = self.get(current.parent_id)
         return ret
 
     def get_name_chain_by_gid(self, category_gid: GID) -> List[str]:

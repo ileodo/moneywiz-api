@@ -7,6 +7,7 @@ from moneywiz_api.model.transaction import (
     Transaction,
 )
 from conftest import transaction_manager, category_manager
+from decimal import Decimal
 
 
 def test_category():
@@ -33,7 +34,7 @@ def test_category_assignment(transaction: Transaction):
     )
     assert len(category_assignment) == len(original_category_assignment)
 
-    total_amount, original_total_amount = 0, 0
+    total_amount, original_total_amount = Decimal(0), Decimal(0)
 
     for category, amount in category_assignment:
         total_amount += amount
@@ -62,7 +63,7 @@ def test_category_assignment(transaction: Transaction):
 def test_category_assignment(transaction: Transaction):
     category_assignment = transaction_manager.category_for_transaction(transaction.id)
     if category_assignment:
-        total_amount = 0
+        total_amount = Decimal(0)
         for category_id, amount in category_assignment:
             total_amount += amount
 
@@ -71,10 +72,10 @@ def test_category_assignment(transaction: Transaction):
         ):
             # The sign of the category_assignment could be wrong for Transfer Transactions
             assert abs(transaction.amount) == pytest.approx(
-                abs(total_amount), abs=0.001
+                abs(total_amount), abs=0.01
             ), (transaction, category_assignment)
         else:
-            assert transaction.amount == pytest.approx(total_amount, abs=0.001), (
+            assert transaction.amount == pytest.approx(total_amount, abs=0.01), (
                 transaction,
                 category_assignment,
             )

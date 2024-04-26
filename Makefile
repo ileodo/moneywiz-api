@@ -1,7 +1,5 @@
 
 VENV?=${VIRTUAL_ENV}
-PYTHONPATH=./src
-
 
 ${VENV}/bin/activate:
 	python3.10 -m venv ${VENV}
@@ -9,8 +7,7 @@ ${VENV}/bin/activate:
 venv: ${VENV}/bin/activate
 
 install: requirements.txt requirements-dev.txt venv
-	${VENV}/bin/pip3 install -r requirements.txt
-	${VENV}/bin/pip3 install -r requirements-dev.txt
+	${VENV}/bin/pip3 install -e .
 
 test:
 	${VENV}/bin/python -m pytest tests

@@ -1,9 +1,13 @@
 from abc import ABC
 from dataclasses import dataclass
 from typing import Optional
+from datetime import datetime
+from decimal import Decimal
 
+from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
+
 
 import pytest
 
@@ -16,24 +20,26 @@ class Transaction(Record, ABC):
 
     reconciled: bool
 
-    amount: float
+    amount: Decimal
     description: str
-    date: float
+    datetime: datetime
     notes: Optional[str]
 
     def __init__(self, row):
         super().__init__(row)
         self.reconciled = row["ZRECONCILED"] == 1
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
         self.description = row["ZDESC2"]
-        self.date = row["ZDATE1"]
+        self.datetime = RDH.get_datetime(row, "ZDATE1")
         self.notes = row["ZNOTES1"]
 
+        # Fixes
+
         # Validate
-        assert self.reconciled is not None
-        assert self.amount is not None
-        assert self.description is not None
-        assert self.date is not None
+        assert self.reconciled is not None, self.as_dict()
+        assert self.amount is not None, self.as_dict()
+        assert self.description is not None, self.as_dict()
+        assert self.datetime is not None, self.as_dict()
         # self.notes can be None
 
 
@@ -44,36 +50,40 @@ class DepositTransaction(Transaction):
     """
 
     account: ID
-    amount: float  # neg: expense, pos: income
+    amount: Decimal  # neg: expense, pos: income
     payee: Optional[ID]
 
     # FX
     original_currency: str
-    original_amount: float  # neg: expense, pos: income
-    original_exchange_rate: Optional[float]
+    original_amount: Decimal  # neg: expense, pos: income
+    original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
         self.payee = row["ZPAYEE2"]
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
+        self.original_exchange_rate = RDH.get_nullable_decimal(
+            row, "ZORIGINALEXCHANGERATE"
+        )
 
         # Validate
         self.validate()
 
     def validate(self):
-        assert self.account is not None
-        assert self.amount is not None
+        assert self.account is not None, self.as_dict()
+        assert self.amount is not None, self.as_dict()
         # self.payee can be None
-        assert self.original_currency is not None
-        assert self.original_amount is not None
+        assert self.original_currency is not None, self.as_dict()
+        assert self.original_amount is not None, self.as_dict()
 
-        assert self.amount * self.original_amount > 0  # Same sign
+        assert self.amount * self.original_amount > 0, self.as_dict()  # Same sign
         if self.original_exchange_rate is not None:
-            assert self.amount == self.original_amount * self.original_exchange_rate
+            assert (
+                self.amount == self.original_amount * self.original_exchange_rate
+            ), self.as_dict()
 
 
 @dataclass
@@ -104,24 +114,24 @@ class InvestmentBuyTransaction(InvestmentTransaction):
     """
 
     account: ID
-    amount: float
+    amount: Decimal
 
-    fee: float
+    fee: Decimal
 
     investment_holding: ID
-    number_of_shares: float
-    price_per_share: float
+    number_of_shares: Decimal
+    price_per_share: Decimal
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
-        self.fee = row["ZFEE2"]
+        self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = row["ZNUMBEROFSHARES1"]
-        self.price_per_share = row["ZPRICEPERSHARE1"]
+        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES1")
+        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -154,24 +164,24 @@ class InvestmentSellTransaction(InvestmentTransaction):
     """
 
     account: ID
-    amount: float  # neg: loss after fees, pos: income
+    amount: Decimal  # neg: loss after fees, pos: income
 
-    fee: float
+    fee: Decimal
 
     investment_holding: ID
-    number_of_shares: float
-    price_per_share: float
+    number_of_shares: Decimal
+    price_per_share: Decimal
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
-        self.fee = row["ZFEE2"]
+        self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = row["ZNUMBEROFSHARES1"]
-        self.price_per_share = row["ZPRICEPERSHARE1"]
+        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES1")
+        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -205,14 +215,14 @@ class ReconcileTransaction(Transaction):
     """
 
     account: ID
-    amount: float  # neg: expense, pos: income
-    reconcile_amount: float  # new balance
+    amount: Decimal  # neg: expense, pos: income
+    reconcile_amount: Decimal  # new balance
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
-        self.reconcile_amount = row["ZRECONCILEAMOUNT"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
+        self.reconcile_amount = RDH.get_decimal(row, "ZRECONCILEAMOUNT")
 
         # Validate
         self.validate()
@@ -230,23 +240,25 @@ class RefundTransaction(Transaction):
     """
 
     account: ID
-    amount: float
+    amount: Decimal
     payee: Optional[ID]
 
     # FX
     original_currency: str
-    original_amount: float
-    original_exchange_rate: Optional[float]
+    original_amount: Decimal
+    original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
         self.payee = row["ZPAYEE2"]
 
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
+        self.original_exchange_rate = RDH.get_nullable_decimal(
+            row, "ZORIGINALEXCHANGERATE"
+        )
 
         # Validate
         self.validate()
@@ -284,39 +296,39 @@ class TransferDepositTransaction(Transaction):
     """
 
     account: ID
-    amount: float  # pos: in
+    amount: Decimal  # pos: in
 
     sender_account: ID
     sender_transaction: ID
 
-    original_amount: float  # ATTENTION: sign got fixed
+    original_amount: Decimal  # ATTENTION: sign got fixed
     original_currency: str
 
-    sender_amount: float
+    sender_amount: Decimal
     sender_currency: str
 
-    original_fee: Optional[float]
+    original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
 
-    original_exchange_rate: float
+    original_exchange_rate: Decimal
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
         self.sender_account = row["ZSENDERACCOUNT"]
         self.sender_transaction = row["ZSENDERTRANSACTION"]
 
-        self.original_amount = row["ZORIGINALAMOUNT"]
+        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.sender_amount = row["ZORIGINALSENDERAMOUNT"]
+        self.sender_amount = RDH.get_decimal(row, "ZORIGINALSENDERAMOUNT")
         self.sender_currency = row["ZORIGINALSENDERCURRENCY"]
 
-        self.original_fee = row["ZORIGINALFEE"]
+        self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
         self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
 
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_exchange_rate = RDH.get_decimal(row, "ZORIGINALEXCHANGERATE")
 
         # Fixes
         self.original_amount = abs(self.original_amount)
@@ -357,39 +369,39 @@ class TransferWithdrawTransaction(Transaction):
     """
 
     account: ID
-    amount: float  # neg: out
+    amount: Decimal  # neg: out
 
     recipient_account: ID
     recipient_transaction: ID
 
-    original_amount: float  # always neg
+    original_amount: Decimal  # always neg
     original_currency: str
 
-    recipient_amount: float  # ATTENTION: sign got fixed
+    recipient_amount: Decimal  # ATTENTION: sign got fixed
     recipient_currency: str
 
-    original_fee: Optional[float]
+    original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
 
-    original_exchange_rate: float
+    original_exchange_rate: Decimal
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
         self.recipient_account = row["ZRECIPIENTACCOUNT1"]
         self.recipient_transaction = row["ZRECIPIENTTRANSACTION"]
 
-        self.original_amount = row["ZORIGINALAMOUNT"]
+        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.recipient_amount = row["ZORIGINALRECIPIENTAMOUNT"]
+        self.recipient_amount = RDH.get_decimal(row, "ZORIGINALRECIPIENTAMOUNT")
         self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
 
-        self.original_fee = row["ZORIGINALFEE"]
+        self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
         self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
 
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_exchange_rate = RDH.get_decimal(row, "ZORIGINALEXCHANGERATE")
 
         # Fixes
         self.recipient_amount = abs(self.recipient_amount)
@@ -429,23 +441,25 @@ class WithdrawTransaction(Transaction):
     """
 
     account: ID
-    amount: float  # neg: expense, pos: income
+    amount: Decimal  # neg: expense, pos: income
     payee: Optional[ID]
 
     # FX
     original_currency: str
-    original_amount: float  # neg: expense, pos: income ATTENTION: sign got fixed
-    original_exchange_rate: Optional[float]
+    original_amount: Decimal  # neg: expense, pos: income ATTENTION: sign got fixed
+    original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = row["ZAMOUNT1"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
         self.payee = row["ZPAYEE2"]
 
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = row["ZORIGINALAMOUNT"]
-        self.original_exchange_rate = row["ZORIGINALEXCHANGERATE"]
+        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
+        self.original_exchange_rate = RDH.get_nullable_decimal(
+            row, "ZORIGINALEXCHANGERATE"
+        )
 
         # Fixes
         if self.amount * self.original_amount < 0:

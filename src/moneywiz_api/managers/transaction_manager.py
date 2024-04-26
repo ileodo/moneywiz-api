@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, Callable, List, Tuple
+from decimal import Decimal
 
-from moneywiz_api import utils
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.transaction import (
     Transaction,
@@ -23,7 +23,7 @@ from moneywiz_api.types import ID
 class TransactionManager(RecordManager[Transaction]):
     def __init__(self):
         super().__init__()
-        self.category_assignment: Dict[ID, List[Tuple[ID, float]]] = {}
+        self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = {}
         self.refund_maps: Dict[ID, ID] = {}
         self.tags_map: Dict[ID, ID] = {}
 
@@ -44,7 +44,7 @@ class TransactionManager(RecordManager[Transaction]):
 
     def load(self, db_accessor: DatabaseAccessor) -> None:
         super().load(db_accessor)
-        self.category_assignment: Dict[ID, List[Tuple[ID, float]]] = (
+        self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = (
             db_accessor.get_category_assignment()
         )
         self.refund_maps: Dict[ID, ID] = db_accessor.get_refund_maps()
@@ -52,7 +52,7 @@ class TransactionManager(RecordManager[Transaction]):
 
     def category_for_transaction(
         self, transaction_id: ID
-    ) -> List[Tuple[ID, float]] | None:
+    ) -> List[Tuple[ID, Decimal]] | None:
         return self.category_assignment.get(transaction_id)
 
     def tags_for_transaction(self, transaction_id: ID) -> List[ID] | None:
@@ -78,9 +78,9 @@ class TransactionManager(RecordManager[Transaction]):
                 for _, x in self.records().items()
                 if not isinstance(x, TransferBudgetTransaction)
                 and x.account == account_id
-                and x.date <= utils.get_date(until)
+                and x.datetime <= until
             ],
-            key=lambda x: x.date,
+            key=lambda x: x.datetime,
         )
 
     def get_all(self, until: datetime = datetime.now()) -> List[Transaction]:
@@ -88,8 +88,7 @@ class TransactionManager(RecordManager[Transaction]):
             [
                 x
                 for _, x in self.records().items()
-                if not isinstance(x, TransferBudgetTransaction)
-                and x.date <= utils.get_date(until)
+                if not isinstance(x, TransferBudgetTransaction) and x.datetime <= until
             ],
-            key=lambda x: x.date,
+            key=lambda x: x.datetime,
         )

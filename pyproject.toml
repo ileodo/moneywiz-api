@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "moneywiz-api"
-version = "0.2.1"
+version = "1.0.0"
 authors = [
     { name="iLeoDo", email="iLeoDo@gmail.com" },
 ]

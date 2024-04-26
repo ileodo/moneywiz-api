@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import Dict, List
+from decimal import Decimal
 
 
 import pytest
@@ -29,8 +30,8 @@ def test_all_investment_account_holdings(investment_account: InvestmentAccount):
     )
     transactions = transaction_manager.get_all_for_account(investment_account.id)
 
-    NumberOfShare = float
-    CostValue = float
+    NumberOfShare = Decimal
+    CostValue = Decimal
     holdings_from_transactions: Dict[ID, List[NumberOfShare, CostValue]] = defaultdict(
         lambda: [0, 0]
     )

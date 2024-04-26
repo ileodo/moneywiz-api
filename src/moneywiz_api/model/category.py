@@ -12,26 +12,26 @@ class Category(Record):
     """
 
     name: str
-    parentId: Optional[int]
+    parent_id: Optional[int]
     type: CategoryType
     user: ID
 
     def __init__(self, row):
         super().__init__(row)
         self.name = row["ZNAME2"]
-        self.parentId = row["ZPARENTCATEGORY"]
+        self.parent_id = row["ZPARENTCATEGORY"]
         self.type = self._convert_type(row["ZTYPE2"])
         self.user = row["ZUSER3"]
 
+        # Fixes
+
         # Validate
-        assert self.name is not None
-        assert self.type is not None
-        assert self.user is not None
+        assert self.name is not None, self.as_dict()
+        assert self.type is not None, self.as_dict()
+        assert self.user is not None, self.as_dict()
 
     @staticmethod
     def _convert_type(type_: Optional[int]) -> CategoryType:
-        if not type_:
-            raise Exception("Invalid type")
-        if type_ not in [1, 2]:
-            raise Exception("Invalid type")
-        return "Expenses" if type_ == 1 else "Income"
+        if type_ and type_ in [1, 2]:
+            return "Expenses" if type_ == 1 else "Income"
+        raise RuntimeError(f"Invalid type {type_}")

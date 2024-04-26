@@ -18,6 +18,8 @@ class Tag(Record):
         self.name = row["ZNAME6"]
         self.user = row["ZUSER8"]
 
+        # Fixes
+
         # Validate
-        assert self.name is not None
-        assert self.user is not None
+        assert self.name is not None, self.as_dict()
+        assert self.user is not None, self.as_dict()

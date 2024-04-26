@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Optional
+from decimal import Decimal
 
 _CUTOFF = datetime(2001, 1, 1, 0, 0, 0).timestamp()
 
