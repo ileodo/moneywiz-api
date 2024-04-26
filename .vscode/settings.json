@@ -1,0 +1,6 @@
+{
+  "python.terminal.launchArgs": [
+    
+  ],
+  "pylint.importStrategy": "useBundled"
+}
