@@ -65,6 +65,7 @@ def main(db_file_path, demo_dump, log_level):
         category_manager,
         transaction_manager,
         investment_holding_manager,
+        tag_manager,
     ) = (
         moneywiz_api.accessor,
         moneywiz_api.account_manager,
@@ -72,6 +73,7 @@ def main(db_file_path, demo_dump, log_level):
         moneywiz_api.category_manager,
         moneywiz_api.transaction_manager,
         moneywiz_api.investment_holding_manager,
+        moneywiz_api.tag_manager,
     )
 
     helper = ShellHelper(moneywiz_api)
@@ -84,6 +86,7 @@ def main(db_file_path, demo_dump, log_level):
         f"{category_manager=}".split("=")[0]: "Category Manageer",
         f"{transaction_manager=}".split("=")[0]: "Transaction Manager",
         f"{investment_holding_manager=}".split("=")[0]: "Investment Holding Manager",
+        f"{tag_manager=}".split("=")[0]: "Tag Manager",
         f"{helper=}".split("=")[0]: "Shell Helper",
     }
 
