@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import click
+import pandas as pd
 
 from moneywiz_api.cli.helpers import ShellHelper
 from moneywiz_api.moneywiz_api import MoneywizApi
@@ -125,6 +126,9 @@ def main(db_file_path, demo_dump, log_level):
 
     _vars = globals()
     _vars.update(locals())
+
+    pd.options.display.max_rows = None
+    pd.options.display.max_colwidth = None
 
     readline.set_completer(rlcompleter.Completer(_vars).complete)
     readline.parse_and_bind("tab: complete")
