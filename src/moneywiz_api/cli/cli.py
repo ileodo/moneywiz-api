@@ -84,7 +84,7 @@ def main(db_file_path, demo_dump, log_level):
         f"{accessor=}".split("=")[0]: "MoneyWiz Database Accessor",
         f"{account_manager=}".split("=")[0]: "Account Manager",
         f"{payee_manager=}".split("=")[0]: "Payee Manager",
-        f"{category_manager=}".split("=")[0]: "Category Manageer",
+        f"{category_manager=}".split("=")[0]: "Category Manager",
         f"{transaction_manager=}".split("=")[0]: "Transaction Manager",
         f"{investment_holding_manager=}".split("=")[0]: "Investment Holding Manager",
         f"{tag_manager=}".split("=")[0]: "Tag Manager",
