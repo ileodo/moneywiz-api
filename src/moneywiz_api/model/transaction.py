@@ -1,15 +1,14 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional
 from datetime import datetime
 from decimal import Decimal
+from typing import Optional
+
+import pytest
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
-
-
-import pytest
 
 
 @dataclass
@@ -68,6 +67,10 @@ class DepositTransaction(Transaction):
         self.original_exchange_rate = RDH.get_nullable_decimal(
             row, "ZORIGINALEXCHANGERATE"
         )
+
+        # Fixes
+        if self.original_exchange_rate == Decimal(0):
+            self.original_exchange_rate = None
 
         # Validate
         self.validate()
@@ -259,6 +262,10 @@ class RefundTransaction(Transaction):
         self.original_exchange_rate = RDH.get_nullable_decimal(
             row, "ZORIGINALEXCHANGERATE"
         )
+
+        # Fixes
+        if self.original_exchange_rate == Decimal(0):
+            self.original_exchange_rate = None
 
         # Validate
         self.validate()
@@ -464,6 +471,9 @@ class WithdrawTransaction(Transaction):
         # Fixes
         if self.amount * self.original_amount < 0:
             self.original_amount = -self.original_amount
+
+        if self.original_exchange_rate == Decimal(0):
+            self.original_exchange_rate = None
 
         # Validate
         self.validate()
