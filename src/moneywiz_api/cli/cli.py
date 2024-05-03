@@ -1,13 +1,13 @@
+import logging
+import random
+import readline
+import rlcompleter
+from code import InteractiveConsole
 from os.path import expanduser
 from pathlib import Path
-from code import InteractiveConsole
 from typing import Dict, List
 
 import click
-import logging
-import readline
-import rlcompleter
-import random
 
 from moneywiz_api.cli.helpers import ShellHelper
 from moneywiz_api.moneywiz_api import MoneywizApi
@@ -90,13 +90,13 @@ def main(db_file_path, demo_dump, log_level):
         f"{helper=}".split("=")[0]: "Shell Helper",
     }
 
-    banner: List[str] = (
+    banner: List[str] = [
         f"Read-only MoneyWiz Shell on {db_file_path}",
         "",
-        "Avaliable components:",
+        "Available components:",
         *[f"- {component:30}  {desc}" for component, desc in names.items()],
         "===================================================================",
-    )
+    ]
 
     if demo_dump:
         _users_table = helper.users_table()
