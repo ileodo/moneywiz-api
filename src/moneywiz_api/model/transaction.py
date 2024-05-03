@@ -263,6 +263,10 @@ class RefundTransaction(Transaction):
             row, "ZORIGINALEXCHANGERATE"
         )
 
+        # Fixes
+        if self.original_exchange_rate == Decimal(0):
+            self.original_exchange_rate = None
+
         # Validate
         self.validate()
 
@@ -467,6 +471,9 @@ class WithdrawTransaction(Transaction):
         # Fixes
         if self.amount * self.original_amount < 0:
             self.original_amount = -self.original_amount
+
+        if self.original_exchange_rate == Decimal(0):
+            self.original_exchange_rate = None
 
         # Validate
         self.validate()
