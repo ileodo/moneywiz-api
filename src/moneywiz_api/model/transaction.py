@@ -95,10 +95,52 @@ class InvestmentExchangeTransaction(Transaction):
     ENT: 38
     """
 
+    account: ID
+    amount: Decimal
+
+    from_investment_holding: ID
+    from_number_of_shares: Decimal
+    from_symbol: str
+
+    original_fee: Decimal
+    original_fee_currency: str
+
+    to_investment_holding: ID
+    to_number_of_shares: Decimal
+    to_symbol: str
+
     def __init__(self, row):
         super().__init__(row)
-        raise NotImplementedError()
+        self.account = row["ZACCOUNT2"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
+        self.from_investment_holding = row["ZFROMINVESTMENTHOLDING"]
+        self.from_number_of_shares = RDH.get_decimal(row, "ZFROMNUMBEROFSHARES")
+        self.from_symbol = row["ZFROMSYMBOL"]
+
+        self.original_fee = RDH.get_decimal(row, "ZORIGINALFEE")
+        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+
+        self.to_investment_holding = row["ZTOINVESTMENTHOLDING"]
+        self.to_number_of_shares = RDH.get_decimal(row, "ZTONUMBEROFSHARES")
+        self.to_symbol = row["ZTOSYMBOL"]
+
+        self.validate()
+
+    def validate(self):
+        assert self.account is not None
+        assert self.amount is not None
+
+        assert self.from_investment_holding is not None
+        assert self.from_number_of_shares is not None
+        assert self.from_symbol is not None
+
+        assert self.original_fee is not None
+        assert self.original_fee_currency is not None
+
+        assert self.to_investment_holding is not None
+        assert self.to_number_of_shares is not None
+        assert self.to_symbol is not None
 
 @dataclass
 class InvestmentTransaction(Transaction, ABC):
