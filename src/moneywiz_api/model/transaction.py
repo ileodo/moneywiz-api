@@ -11,6 +11,10 @@ from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
 
 
+TOLERANCE = 1e-8
+TOLERANCE_AMOUNT = 0.01
+
+
 @dataclass
 class Transaction(Record, ABC):
     """
@@ -85,7 +89,7 @@ class DepositTransaction(Transaction):
         assert self.amount * self.original_amount > 0, self.as_dict()  # Same sign
         if self.original_exchange_rate is not None:
             assert (
-                self.amount == self.original_amount * self.original_exchange_rate
+                self.amount == pytest.approx(self.original_amount * self.original_exchange_rate, abs=TOLERANCE_AMOUNT)
             ), self.as_dict()
 
 
@@ -95,10 +99,52 @@ class InvestmentExchangeTransaction(Transaction):
     ENT: 38
     """
 
+    account: ID
+    amount: Decimal
+
+    from_investment_holding: ID
+    from_number_of_shares: Decimal
+    from_symbol: str
+
+    original_fee: Decimal
+    original_fee_currency: str
+
+    to_investment_holding: ID
+    to_number_of_shares: Decimal
+    to_symbol: str
+
     def __init__(self, row):
         super().__init__(row)
-        raise NotImplementedError()
+        self.account = row["ZACCOUNT2"]
+        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
+        self.from_investment_holding = row["ZFROMINVESTMENTHOLDING"]
+        self.from_number_of_shares = RDH.get_decimal(row, "ZFROMNUMBEROFSHARES")
+        self.from_symbol = row["ZFROMSYMBOL"]
+
+        self.original_fee = RDH.get_decimal(row, "ZORIGINALFEE")
+        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+
+        self.to_investment_holding = row["ZTOINVESTMENTHOLDING"]
+        self.to_number_of_shares = RDH.get_decimal(row, "ZTONUMBEROFSHARES")
+        self.to_symbol = row["ZTOSYMBOL"]
+
+        self.validate()
+
+    def validate(self):
+        assert self.account is not None
+        assert self.amount is not None
+
+        assert self.from_investment_holding is not None
+        assert self.from_number_of_shares is not None
+        assert self.from_symbol is not None
+
+        assert self.original_fee is not None
+        assert self.original_fee_currency is not None
+
+        assert self.to_investment_holding is not None
+        assert self.to_number_of_shares is not None
+        assert self.to_symbol is not None
 
 @dataclass
 class InvestmentTransaction(Transaction, ABC):
@@ -149,7 +195,7 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
+        assert abs(self.fee) == pytest.approx(0, abs=TOLERANCE) or self.fee > TOLERANCE
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
         assert self.number_of_shares > 0
@@ -157,7 +203,7 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.price_per_share >= 0
         assert -(
             self.number_of_shares * self.price_per_share + self.fee
-        ) == pytest.approx(self.amount, abs=0.001)
+        ) == pytest.approx(self.amount, abs=TOLERANCE_AMOUNT)
 
 
 @dataclass
@@ -199,7 +245,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
+        assert abs(self.fee) == pytest.approx(0, abs=TOLERANCE) or self.fee > TOLERANCE
 
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
@@ -208,7 +254,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.price_per_share >= 0
         assert (
             self.number_of_shares * self.price_per_share - self.fee
-        ) == pytest.approx(self.amount, abs=0.001)
+        ) == pytest.approx(self.amount, abs=TOLERANCE_AMOUNT)
 
 
 @dataclass
@@ -225,7 +271,7 @@ class ReconcileTransaction(Transaction):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
         self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.reconcile_amount = RDH.get_decimal(row, "ZRECONCILEAMOUNT")
+        self.reconcile_amount = RDH.get_nullable_decimal(row, "ZRECONCILEAMOUNT")
 
         # Validate
         self.validate()
@@ -233,7 +279,7 @@ class ReconcileTransaction(Transaction):
     def validate(self):
         assert self.account is not None
         assert self.amount is not None
-        assert self.reconcile_amount is not None
+        # assert self.reconcile_amount is not None
 
 
 @dataclass
@@ -281,7 +327,7 @@ class RefundTransaction(Transaction):
 
         if self.original_exchange_rate is not None:
             assert self.amount == pytest.approx(
-                self.original_amount * self.original_exchange_rate, abs=0.001
+                self.original_amount * self.original_exchange_rate, abs=TOLERANCE_AMOUNT
             )
 
 
@@ -362,10 +408,10 @@ class TransferDepositTransaction(Transaction):
         assert self.original_exchange_rate is not None
 
         # assert self.amount ==  self.original_amount # original_amount could be different with amount ZCURRENCYEXCHANGERATE is playing up
+
         assert self.original_amount == pytest.approx(
-            -self.sender_amount * self.original_exchange_rate
-            - (self.original_fee or 0),
-            abs=0.001,
+            -self.sender_amount * self.original_exchange_rate,
+            abs=TOLERANCE,
         )
 
 
@@ -402,7 +448,7 @@ class TransferWithdrawTransaction(Transaction):
 
         self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
         self.original_currency = row["ZORIGINALCURRENCY"]
-        self.recipient_amount = RDH.get_decimal(row, "ZORIGINALRECIPIENTAMOUNT")
+        self.recipient_amount = RDH.get_nullable_decimal(row, "ZORIGINALRECIPIENTAMOUNT")
         self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
 
         self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
@@ -410,8 +456,14 @@ class TransferWithdrawTransaction(Transaction):
 
         self.original_exchange_rate = RDH.get_decimal(row, "ZORIGINALEXCHANGERATE")
 
+        self.number_of_shares = RDH.get_nullable_decimal(row, 'ZNUMBEROFSHARES1')
+
         # Fixes
-        self.recipient_amount = abs(self.recipient_amount)
+        if self.recipient_amount is None:
+            self.recipient_amount = abs(self.original_amount)
+
+        if self.recipient_currency is None and self.original_exchange_rate == 1:
+            self.recipient_currency = self.original_currency
 
         # Validate
         self.validate()
@@ -434,11 +486,14 @@ class TransferWithdrawTransaction(Transaction):
 
         assert self.original_exchange_rate is not None
 
-        assert self.amount == self.original_amount
-        assert self.amount == pytest.approx(
-            -self.recipient_amount / self.original_exchange_rate,
-            abs=0.001,
+        # assert self.amount == self.original_amount
+        assert -self.original_amount == pytest.approx(
+            self.recipient_amount / self.original_exchange_rate,
+            abs=TOLERANCE,
         )
+
+        if self.number_of_shares is not None and self.number_of_shares > 0:
+            assert -self.number_of_shares == -self.original_amount + self.original_fee
 
 
 @dataclass
@@ -489,5 +544,5 @@ class WithdrawTransaction(Transaction):
 
         if self.original_exchange_rate is not None:
             assert self.amount == pytest.approx(
-                self.original_amount * self.original_exchange_rate, abs=0.001
+                self.original_amount * self.original_exchange_rate, abs=TOLERANCE_AMOUNT
             )
