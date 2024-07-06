@@ -10,6 +10,8 @@ from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ID
 
+ABS_TOLERANCE = 0.001
+
 
 @dataclass
 class Transaction(Record, ABC):
@@ -84,8 +86,8 @@ class DepositTransaction(Transaction):
 
         assert self.amount * self.original_amount > 0, self.as_dict()  # Same sign
         if self.original_exchange_rate is not None:
-            assert (
-                self.amount == self.original_amount * self.original_exchange_rate
+            assert self.amount == pytest.approx(
+                self.original_amount * self.original_exchange_rate, abs=ABS_TOLERANCE
             ), self.as_dict()
 
 
@@ -149,7 +151,10 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
+        assert (
+            abs(self.fee) == pytest.approx(0, abs=ABS_TOLERANCE)
+            or self.fee > ABS_TOLERANCE
+        )
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
         assert self.number_of_shares > 0
@@ -157,7 +162,7 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.price_per_share >= 0
         assert -(
             self.number_of_shares * self.price_per_share + self.fee
-        ) == pytest.approx(self.amount, abs=0.001)
+        ) == pytest.approx(self.amount, abs=ABS_TOLERANCE)
 
 
 @dataclass
@@ -199,7 +204,10 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        assert abs(self.fee) == pytest.approx(0, abs=0.001) or self.fee > 0.001
+        assert (
+            abs(self.fee) == pytest.approx(0, abs=ABS_TOLERANCE)
+            or self.fee > ABS_TOLERANCE
+        )
 
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
@@ -208,7 +216,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.price_per_share >= 0
         assert (
             self.number_of_shares * self.price_per_share - self.fee
-        ) == pytest.approx(self.amount, abs=0.001)
+        ) == pytest.approx(self.amount, abs=ABS_TOLERANCE)
 
 
 @dataclass
@@ -281,7 +289,7 @@ class RefundTransaction(Transaction):
 
         if self.original_exchange_rate is not None:
             assert self.amount == pytest.approx(
-                self.original_amount * self.original_exchange_rate, abs=0.001
+                self.original_amount * self.original_exchange_rate, abs=ABS_TOLERANCE
             )
 
 
@@ -365,7 +373,7 @@ class TransferDepositTransaction(Transaction):
         assert self.original_amount == pytest.approx(
             -self.sender_amount * self.original_exchange_rate
             - (self.original_fee or 0),
-            abs=0.001,
+            abs=ABS_TOLERANCE,
         )
 
 
@@ -437,7 +445,7 @@ class TransferWithdrawTransaction(Transaction):
         assert self.amount == self.original_amount
         assert self.amount == pytest.approx(
             -self.recipient_amount / self.original_exchange_rate,
-            abs=0.001,
+            abs=ABS_TOLERANCE,
         )
 
 
@@ -489,5 +497,5 @@ class WithdrawTransaction(Transaction):
 
         if self.original_exchange_rate is not None:
             assert self.amount == pytest.approx(
-                self.original_amount * self.original_exchange_rate, abs=0.001
+                self.original_amount * self.original_exchange_rate, abs=ABS_TOLERANCE
             )
