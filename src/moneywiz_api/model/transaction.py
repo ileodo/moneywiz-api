@@ -97,9 +97,51 @@ class InvestmentExchangeTransaction(Transaction):
     ENT: 38
     """
 
+    account: ID
+
+    from_investment_holding: ID
+    from_symbol: str
+    to_investment_holding: ID
+    to_symbol: str
+    from_number_of_shares: Decimal  # neg
+    to_number_of_shares: Decimal  # pos
+
+    original_fee: Decimal  # pos: fee, neg: income?
+    original_fee_currency: str
+
     def __init__(self, row):
         super().__init__(row)
-        raise NotImplementedError()
+
+        self.account = row["ZACCOUNT2"]
+        self.from_investment_holding = row["ZFROMINVESTMENTHOLDING"]
+        self.from_symbol = row["ZFROMSYMBOL"]
+        self.to_investment_holding = row["ZTOINVESTMENTHOLDING"]
+        self.to_symbol = row["ZTOSYMBOL"]
+        self.from_number_of_shares = row["ZFROMNUMBEROFSHARES"]
+        self.to_number_of_shares = row["ZTONUMBEROFSHARES"]
+
+        self.original_fee = row["ZORIGINALFEE"]
+        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+
+        # Fixes
+        if self.original_fee_currency == self.from_symbol:
+            self.from_number_of_shares += self.original_fee
+        elif self.original_fee_currency == self.to_symbol:
+            self.to_number_of_shares += self.original_fee
+
+        # Validate
+        self.validate()
+
+    def validate(self):
+        assert self.account is not None
+        assert self.from_investment_holding is not None
+        assert self.from_symbol
+        assert self.to_investment_holding is not None
+        assert self.to_symbol
+        assert self.from_number_of_shares <= 0
+        assert self.to_number_of_shares >= 0
+        assert self.original_fee is not None
+        assert self.original_fee_currency in [self.from_symbol, self.to_symbol]
 
 
 @dataclass
