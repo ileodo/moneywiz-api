@@ -268,22 +268,27 @@ class ReconcileTransaction(Transaction):
     """
 
     account: ID
-    amount: Decimal  # neg: expense, pos: income
-    reconcile_amount: Decimal  # new balance
+
+    reconcile_amount: Decimal | None  # new balance
+    reconcile_number_of_shares: Decimal | None  # new balance
 
     def __init__(self, row):
         super().__init__(row)
         self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.reconcile_amount = RDH.get_decimal(row, "ZRECONCILEAMOUNT")
+        self.reconcile_amount = RDH.get_nullable_decimal(row, "ZRECONCILEAMOUNT")
+        self.reconcile_number_of_shares = RDH.get_nullable_decimal(
+            row, "ZRECONCILENUMBEROFSHARES"
+        )
 
         # Validate
         self.validate()
 
     def validate(self):
         assert self.account is not None
-        assert self.amount is not None
-        assert self.reconcile_amount is not None
+        assert (
+            self.reconcile_amount is not None
+            or self.reconcile_number_of_shares is not None
+        )
 
 
 @dataclass
