@@ -7,7 +7,7 @@ from moneywiz_api.model.transaction import (
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
 )
-from moneywiz_api.types  import ID
+from moneywiz_api.types import ID
 
 
 from conftest import (
