@@ -26,3 +26,5 @@ jobs:
       #          run: |
       #            pylint src
       - uses: astral-sh/ruff-action@v3
+      - run: ruff check --diff
+      - run: ruff format --check --diff
