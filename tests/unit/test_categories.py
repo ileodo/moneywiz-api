@@ -22,7 +22,7 @@ def test_category():
         if isinstance(x, RefundTransaction)
     ],
 )
-def test_category_assignment(transaction: Transaction):
+def test_category_assignment_refund_transactions(transaction: Transaction):
     # Refund transaction doesn't have correct category assignments
     category_assignment = transaction_manager.category_for_transaction(transaction.id)
     original_transaction_id = (
@@ -60,7 +60,7 @@ def test_category_assignment(transaction: Transaction):
         if not isinstance(x, RefundTransaction)
     ],
 )
-def test_category_assignment(transaction: Transaction):
+def test_category_assignment_non_refund_transaction(transaction: Transaction):
     category_assignment = transaction_manager.category_for_transaction(transaction.id)
     if category_assignment:
         total_amount = Decimal(0)
