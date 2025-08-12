@@ -25,7 +25,7 @@ from conftest import account_manager, investment_holding_manager, transaction_ma
     ],
 )
 def test_all_investment_account_holdings(investment_account: InvestmentAccount):
-    holdings = investment_holding_manager.get_holdings_for_account(
+    _holdings = investment_holding_manager.get_holdings_for_account(
         investment_account.id
     )
     transactions = transaction_manager.get_all_for_account(investment_account.id)
@@ -37,14 +37,14 @@ def test_all_investment_account_holdings(investment_account: InvestmentAccount):
     )
     for transaction in transactions:
         if isinstance(transaction, InvestmentBuyTransaction):
-            holdings_from_transactions[transaction.investment_holding][
-                0
-            ] += transaction.number_of_shares
+            holdings_from_transactions[transaction.investment_holding][0] += (
+                transaction.number_of_shares
+            )
             # holdings_from_transactions[transaction.investment_holding][1] += transaction.amount
         if isinstance(transaction, InvestmentSellTransaction):
-            holdings_from_transactions[transaction.investment_holding][
-                0
-            ] -= transaction.number_of_shares
+            holdings_from_transactions[transaction.investment_holding][0] -= (
+                transaction.number_of_shares
+            )
             # holdings_from_transactions[transaction.investment_holding][1] += transaction.amount
 
     # holding.number_of_shares can be wrong.

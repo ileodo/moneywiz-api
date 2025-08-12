@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import Dict
 from pathlib import Path
 
@@ -16,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class ShellHelper:
-
     def __init__(self, moneywiz_api: MoneywizApi) -> None:
         self._mw_api = moneywiz_api
 

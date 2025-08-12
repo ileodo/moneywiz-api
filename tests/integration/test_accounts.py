@@ -9,6 +9,7 @@ from moneywiz_api.model.transaction import (
 )
 from moneywiz_api.types import ID
 
+
 from conftest import (
     account_manager,
     transaction_manager,
@@ -52,6 +53,6 @@ def test_holding_balance(
         if isinstance(record, InvestmentSellTransaction):
             holding_balances[record.investment_holding] -= record.number_of_shares
 
-    assert holding_balances == pytest.approx(
-        expected_holding_balance, abs=0.01
-    ), holding_balances.items()
+    assert holding_balances == pytest.approx(expected_holding_balance, abs=0.01), (
+        holding_balances.items()
+    )

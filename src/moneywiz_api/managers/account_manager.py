@@ -12,7 +12,7 @@ from moneywiz_api.model.account import (
     InvestmentAccount,
     ForexAccount,
 )
-from moneywiz_api.types import ID, GID
+from moneywiz_api.types import ID
 
 
 class AccountManager(RecordManager[Account]):

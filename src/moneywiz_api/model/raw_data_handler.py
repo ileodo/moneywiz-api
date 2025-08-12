@@ -6,14 +6,12 @@ from moneywiz_api.utils import get_datetime
 
 
 class RawDataHandler:
-
     @staticmethod
     def get_datetime(row: Dict[str, Any], key: str) -> datetime:
         raw_value = row[key]
-        assert isinstance(raw_value, float) or isinstance(
-            raw_value, int
-        ), f"row['{key}'] = {row[key]}, is not a float or int, where row is: " + str(
-            RawDataHandler.filter_row(row)
+        assert isinstance(raw_value, float) or isinstance(raw_value, int), (
+            f"row['{key}'] = {row[key]}, is not a float or int, where row is: "
+            + str(RawDataHandler.filter_row(row))
         )
         return get_datetime(raw_value)
 
@@ -28,10 +26,9 @@ class RawDataHandler:
     @staticmethod
     def get_decimal(row: Dict[str, Any], key: str) -> Decimal:
         raw_value = row[key]
-        assert isinstance(raw_value, float) or isinstance(
-            raw_value, int
-        ), f"row['{key}'] = {row[key]}, is not a float or int, where row is: " + str(
-            RawDataHandler.filter_row(row)
+        assert isinstance(raw_value, float) or isinstance(raw_value, int), (
+            f"row['{key}'] = {row[key]}, is not a float or int, where row is: "
+            + str(RawDataHandler.filter_row(row))
         )
         return Decimal(str(raw_value))
 

@@ -1,6 +1,0 @@
-pytest
-pylint
-mypy
-black
-build
-twine
