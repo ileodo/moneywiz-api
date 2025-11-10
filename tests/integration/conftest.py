@@ -10,7 +10,6 @@ BALANCE_AS_OF_DATE = test_config.BALANCE_AS_OF_DATE
 CASH_BALANCES = test_config.CASH_BALANCES
 HOLDINGS_BALANCES = test_config.HOLDINGS_BALANCES
 
-
 class _UnconfiguredManager:
     def records(self):
         return {}
