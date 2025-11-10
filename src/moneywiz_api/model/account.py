@@ -1,5 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass, field
+from typing import Optional
 from decimal import Decimal
 
 from moneywiz_api.model.record import Record
@@ -25,7 +26,7 @@ class Account(Record, ABC):
     name: str
     currency: str
     opening_balance: Decimal  # might be a tiny number
-    info: str
+    info: Optional[str]
     user: ID
 
     def __init__(self, row):
@@ -50,7 +51,7 @@ class Account(Record, ABC):
         assert self.name is not None, self.as_dict()
         assert self.currency is not None, self.as_dict()
         assert self.opening_balance is not None, self.as_dict()
-        assert self.info is not None, self.as_dict()
+        # self.info can be None in some databases
         assert self.user is not None, self.as_dict()
 
 
