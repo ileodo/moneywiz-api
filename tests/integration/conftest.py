@@ -33,7 +33,6 @@ else:
     transaction_manager = _UnconfiguredManager()
     investment_holding_manager = _UnconfiguredManager()
 
-
 def pytest_collection_modifyitems(config, items):
     """Skip integration tests only after their initial conftest can load safely."""
     if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
