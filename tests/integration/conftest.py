@@ -13,8 +13,6 @@ HOLDINGS_BALANCES = test_config.HOLDINGS_BALANCES
 class _UnconfiguredManager:
     def records(self):
         return {}
-
-
 if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
     from moneywiz_api import MoneywizApi
 
