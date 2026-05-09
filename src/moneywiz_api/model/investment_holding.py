@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
 from decimal import Decimal
+from typing import Any, Dict, Optional
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
@@ -47,7 +47,7 @@ class InvestmentHolding(Record):
         self.opening_number_of_shares = RDH.get_nullable_decimal(
             row, "ZOPENNINGNUMBEROFSHARES"
         )
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
+        self.number_of_shares = RDH.get_nullable_decimal(row, "ZNUMBEROFSHARES")
         # self.price_per_share = row["ZPRICEPERSHARE"]
         self.symbol = row["ZSYMBOL"]
         self.holding_type = row["ZHOLDINGTYPE"]
@@ -62,6 +62,7 @@ class InvestmentHolding(Record):
         )
 
         # Fixes
+        self.number_of_shares = self.number_of_shares or Decimal(0)
 
         # Validate
         self.validate()

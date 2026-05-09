@@ -6,7 +6,7 @@ ${VENV}/bin/activate:
 
 venv: ${VENV}/bin/activate
 
-install: requirements.txt requirements-dev.txt venv
+install: pyproject.toml venv
 	${VENV}/bin/pip3 install -e .
 
 test:
