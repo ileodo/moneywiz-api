@@ -177,7 +177,7 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES1")
+        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
         self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
 
         # Fixes
@@ -230,7 +230,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES1")
+        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
         self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
 
         # Fixes

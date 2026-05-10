@@ -1,12 +1,11 @@
 from pathlib import Path
 
 from moneywiz_api import MoneywizApi
-
 from tests.integration.test_config import (
-    TEST_DB_PATH,
+    # BALANCE_AS_OF_DATE,
     # CASH_BALANCES,
     # HOLDINGS_BALANCES,
-    # BALANCE_AS_OF_DATE,
+    TEST_DB_PATH,
 )
 
 moneywizApi = MoneywizApi(Path(TEST_DB_PATH))
