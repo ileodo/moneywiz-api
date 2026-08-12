@@ -4,7 +4,6 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api.model.schema_mapped_row import (
     datetime_field,
@@ -16,19 +15,11 @@ from moneywiz_api.model.schema_mapped_row import (
 )
 from moneywiz_api.types import ID
 
-ABS_TOLERANCE = 0.001
+ABS_TOLERANCE = Decimal("0.001")
 
 
-def approx_equal(a, b, abs_tol: float = ABS_TOLERANCE) -> bool:
-    if a is None or b is None:
-        return False
-    try:
-        a_dec = Decimal(str(a))
-        b_dec = Decimal(str(b))
-        tol = Decimal(str(abs_tol))
-    except Exception:
-        return False
-    return abs(a_dec - b_dec) <= tol
+def approx_equal(a: Decimal, b: Decimal, abs_tol: Decimal = ABS_TOLERANCE) -> bool:
+    return abs(a - b) <= abs_tol
 
 
 @dataclass
@@ -228,17 +219,14 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        tol = Decimal(str(ABS_TOLERANCE))
-        assert (abs(self.fee) <= tol) or (self.fee > tol)
+        assert (abs(self.fee) <= ABS_TOLERANCE) or (self.fee > ABS_TOLERANCE)
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
         assert self.number_of_shares > 0
         assert self.price_per_share is not None
         assert self.price_per_share >= 0
         assert approx_equal(
-            -(
-                self.number_of_shares * self.price_per_share + self.fee
-            ),
+            -(self.number_of_shares * self.price_per_share + self.fee),
             self.amount,
         )
 
@@ -285,8 +273,7 @@ class InvestmentSellTransaction(InvestmentTransaction):
         assert self.fee is not None
         assert self.fee >= 0
         # Either tiny (close to 0) or positive
-        tol = Decimal(str(ABS_TOLERANCE))
-        assert (abs(self.fee) <= tol) or (self.fee > tol)
+        assert (abs(self.fee) <= ABS_TOLERANCE) or (self.fee > ABS_TOLERANCE)
 
         assert self.investment_holding is not None
         assert self.number_of_shares is not None
@@ -374,8 +361,9 @@ class RefundTransaction(Transaction):
         assert self.original_amount > 0
 
         if self.original_exchange_rate is not None:
-            # Skip strict equality; some databases have rounding/exchange quirks
-            pass
+            assert approx_equal(
+                self.amount, self.original_amount * self.original_exchange_rate
+            )
 
 
 @dataclass
@@ -392,7 +380,7 @@ class TransferDepositTransaction(Transaction):
         "account": schema_field("ZACCOUNT2"),
         "sender_account": schema_field("ZSENDERACCOUNT"),
         "sender_transaction": schema_field("ZSENDERTRANSACTION"),
-        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_amount": nullable_decimal_field("ZORIGINALAMOUNT"),
         "original_currency": schema_field("ZORIGINALCURRENCY"),
         "sender_amount": decimal_field("ZORIGINALSENDERAMOUNT"),
         "sender_currency": schema_field("ZORIGINALSENDERCURRENCY"),
@@ -408,10 +396,10 @@ class TransferDepositTransaction(Transaction):
     sender_transaction: ID
 
     original_amount: Decimal  # ATTENTION: sign got fixed
-    original_currency: str
+    original_currency: Optional[str]
 
     sender_amount: Decimal
-    sender_currency: str
+    sender_currency: Optional[str]
 
     original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
@@ -501,10 +489,10 @@ class TransferWithdrawTransaction(Transaction):
     recipient_transaction: ID
 
     original_amount: Decimal  # always neg
-    original_currency: str
+    original_currency: Optional[str]
 
     recipient_amount: Decimal  # ATTENTION: sign got fixed
-    recipient_currency: str
+    recipient_currency: Optional[str]
 
     original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
@@ -603,6 +591,12 @@ class WithdrawTransaction(Transaction):
 
         if self.original_exchange_rate == Decimal(0):
             self.original_exchange_rate = None
+        elif (
+            self.original_exchange_rate != Decimal(1)
+            and self.amount == self.original_amount
+        ):
+            # The rate is stale when no currency conversion took place.
+            self.original_exchange_rate = None
 
     def validate(self) -> None:
         super().validate()
@@ -615,5 +609,6 @@ class WithdrawTransaction(Transaction):
         assert self.amount * self.original_amount > 0
 
         if self.original_exchange_rate is not None:
-            # Skip strict equality; tolerate exchange rounding discrepancies
-            pass
+            assert approx_equal(
+                self.amount, self.original_amount * self.original_exchange_rate
+            )

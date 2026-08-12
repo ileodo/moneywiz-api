@@ -10,9 +10,12 @@ BALANCE_AS_OF_DATE = test_config.BALANCE_AS_OF_DATE
 CASH_BALANCES = test_config.CASH_BALANCES
 HOLDINGS_BALANCES = test_config.HOLDINGS_BALANCES
 
+
 class _UnconfiguredManager:
     def records(self):
         return {}
+
+
 if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
     from moneywiz_api import MoneywizApi
 
@@ -32,6 +35,7 @@ else:
     category_manager = _UnconfiguredManager()
     transaction_manager = _UnconfiguredManager()
     investment_holding_manager = _UnconfiguredManager()
+
 
 def pytest_collection_modifyitems(config, items):
     """Skip integration tests only after their initial conftest can load safely."""

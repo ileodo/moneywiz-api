@@ -8,6 +8,7 @@ import pytest
 
 from moneywiz_api.types import ID
 
+
 def get_test_db_path() -> Path:
     test_db_path = os.environ.get("MONEYWIZ_TEST_DB_PATH")
     if test_db_path is None:

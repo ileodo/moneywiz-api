@@ -3,9 +3,15 @@
 ![Static Badge](https://img.shields.io/badge/Python-3-blue?style=flat&logo=Python)
 ![PyPI](https://img.shields.io/pypi/v/moneywiz-api)
 
-<a href="https://www.buymeacoffee.com/Ileodo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-blue.png)](https://www.buymeacoffee.com/Ileodo)
 
 A Python API to access MoneyWiz Sqlite database.
+
+## Table of Contents
+
+- [Get Started](#get-started)
+- [Tests](#tests)
+- [Contribution](#contribution)
 
 ## Get Started
 
