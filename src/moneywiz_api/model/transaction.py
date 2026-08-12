@@ -8,6 +8,7 @@ import pytest
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
+from moneywiz_api.schema_profile import SchemaProfile
 from moneywiz_api.types import ID
 
 ABS_TOLERANCE = 0.001
@@ -169,16 +170,30 @@ class InvestmentBuyTransaction(InvestmentTransaction):
     number_of_shares: Decimal
     price_per_share: Decimal
 
-    def __init__(self, row):
+    def __init__(self, row, schema_profile: SchemaProfile | None = None):
         super().__init__(row)
+        if schema_profile is not None and not schema_profile.is_known:
+            raise ValueError("unsupported investment schema profile")
         self.account = row["ZACCOUNT2"]
         self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
         self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
-        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
+        self.number_of_shares = RDH.get_profile_decimal(
+            row,
+            schema_profile.transaction_number_of_shares_column
+            if schema_profile
+            else None,
+            "ZNUMBEROFSHARES1",
+            "ZNUMBEROFSHARES",
+        )
+        self.price_per_share = RDH.get_profile_decimal(
+            row,
+            schema_profile.price_per_share_column if schema_profile else None,
+            "ZPRICEPERSHARE1",
+            "ZPRICEPERSHARE",
+        )
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -222,16 +237,30 @@ class InvestmentSellTransaction(InvestmentTransaction):
     number_of_shares: Decimal
     price_per_share: Decimal
 
-    def __init__(self, row):
+    def __init__(self, row, schema_profile: SchemaProfile | None = None):
         super().__init__(row)
+        if schema_profile is not None and not schema_profile.is_known:
+            raise ValueError("unsupported investment schema profile")
         self.account = row["ZACCOUNT2"]
         self.amount = RDH.get_decimal(row, "ZAMOUNT1")
 
         self.fee = RDH.get_decimal(row, "ZFEE2")
 
         self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
-        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
+        self.number_of_shares = RDH.get_profile_decimal(
+            row,
+            schema_profile.transaction_number_of_shares_column
+            if schema_profile
+            else None,
+            "ZNUMBEROFSHARES1",
+            "ZNUMBEROFSHARES",
+        )
+        self.price_per_share = RDH.get_profile_decimal(
+            row,
+            schema_profile.price_per_share_column if schema_profile else None,
+            "ZPRICEPERSHARE1",
+            "ZPRICEPERSHARE",
+        )
 
         # Fixes
         self.fee = max(self.fee, 0)
@@ -383,9 +412,9 @@ class TransferDepositTransaction(Transaction):
         self.sender_transaction = row["ZSENDERTRANSACTION"]
 
         self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_currency = row["ZORIGINALCURRENCY"]
+        self.original_currency = row["ZORIGINALCURRENCY"] or ""
         self.sender_amount = RDH.get_decimal(row, "ZORIGINALSENDERAMOUNT")
-        self.sender_currency = row["ZORIGINALSENDERCURRENCY"]
+        self.sender_currency = row["ZORIGINALSENDERCURRENCY"] or ""
 
         self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
         self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
@@ -394,6 +423,11 @@ class TransferDepositTransaction(Transaction):
 
         # Fixes
         self.original_amount = abs(self.original_amount)
+        if self.original_amount == 0 and self.sender_amount != 0:
+            self.original_amount = abs(
+                -self.sender_amount * self.original_exchange_rate
+                - (self.original_fee or 0)
+            )
 
         # Validate
         self.validate()
@@ -456,9 +490,9 @@ class TransferWithdrawTransaction(Transaction):
         self.recipient_transaction = row["ZRECIPIENTTRANSACTION"]
 
         self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_currency = row["ZORIGINALCURRENCY"]
+        self.original_currency = row["ZORIGINALCURRENCY"] or ""
         self.recipient_amount = RDH.get_decimal(row, "ZORIGINALRECIPIENTAMOUNT")
-        self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
+        self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"] or ""
 
         self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
         self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
@@ -467,6 +501,16 @@ class TransferWithdrawTransaction(Transaction):
 
         # Fixes
         self.recipient_amount = abs(self.recipient_amount)
+        if self.recipient_amount == 0 and self.original_amount != 0:
+            self.recipient_amount = abs(
+                self.original_amount * self.original_exchange_rate
+            )
+        if self.original_amount == 0 and self.recipient_amount != 0:
+            if self.original_exchange_rate == 0:
+                raise ValueError(
+                    "cannot reconstruct a transfer amount with a zero exchange rate"
+                )
+            self.original_amount = self.amount
 
         # Validate
         self.validate()

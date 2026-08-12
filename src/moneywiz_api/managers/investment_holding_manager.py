@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from moneywiz_api.model.investment_holding import InvestmentHolding
 from moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.types import ID
 
 
@@ -15,6 +16,11 @@ class InvestmentHoldingManager(RecordManager[InvestmentHolding]):
         return {
             "InvestmentHolding": InvestmentHolding,
         }
+
+    def construct_record(
+        self, constructor: Callable, record, db_accessor: DatabaseAccessor
+    ):
+        return constructor(record, schema_profile=db_accessor.schema_profile)
 
     def get_holdings_for_account(self, account_id: ID) -> List[InvestmentHolding]:
         return [x for _, x in self.records().items() if x.account == account_id]

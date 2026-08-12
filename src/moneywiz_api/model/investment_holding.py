@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
+from moneywiz_api.schema_profile import SchemaProfile
 from moneywiz_api.types import ID
 
 
@@ -41,13 +42,20 @@ class InvestmentHolding(Record):
     """
     _cost_basis_of_missing_ob_shares: Decimal = field(repr=False)
 
-    def __init__(self, row):
+    def __init__(self, row, schema_profile: SchemaProfile | None = None):
         super().__init__(row)
+        if schema_profile is not None and not schema_profile.is_known:
+            raise ValueError("unsupported investment schema profile")
         self.account = row["ZINVESTMENTACCOUNT"]
         self.opening_number_of_shares = RDH.get_nullable_decimal(
             row, "ZOPENNINGNUMBEROFSHARES"
         )
-        self.number_of_shares = RDH.get_nullable_decimal(row, "ZNUMBEROFSHARES")
+        self.number_of_shares = RDH.get_profile_nullable_decimal(
+            row,
+            schema_profile.holding_number_of_shares_column if schema_profile else None,
+            "ZNUMBEROFSHARES",
+            "ZNUMBEROFSHARES1",
+        )
         # self.price_per_share = row["ZPRICEPERSHARE"]
         self.symbol = row["ZSYMBOL"]
         self.holding_type = row["ZHOLDINGTYPE"]

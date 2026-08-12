@@ -5,7 +5,13 @@ from typing import Dict, List, Any, Callable, Tuple
 from decimal import Decimal
 
 from moneywiz_api.model.record import Record
+from moneywiz_api.model.investment_holding import InvestmentHolding
+from moneywiz_api.model.transaction import (
+    InvestmentBuyTransaction,
+    InvestmentSellTransaction,
+)
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.schema_profile import SchemaProfile, detect_schema_profile
 from moneywiz_api.types import ENT_ID, ID, GID
 
 
@@ -20,6 +26,7 @@ class DatabaseAccessor:
             return record
 
         self._con.row_factory = dict_factory
+        self._schema_profile = detect_schema_profile(self._con)
 
         self._ent_to_typename: Dict[ENT_ID, str] = self._load_primarykey()
         self._typename_to_ent: Dict[str, ENT_ID] = {
@@ -43,11 +50,23 @@ class DatabaseAccessor:
             f"{key}: {value}" for key, value in self._ent_to_typename.items()
         )
 
+    @property
+    def schema_profile(self) -> SchemaProfile:
+        """Return the physical-column compatibility profile for this store."""
+        return self._schema_profile
+
     def typename_for(self, ent_id: ENT_ID) -> str:
         return self._ent_to_typename.get(ent_id)
 
     def ent_for(self, typename: str) -> ENT_ID:
         return self._typename_to_ent.get(typename)
+
+    def _table_exists(self, table_name: str) -> bool:
+        row = self._con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        return row is not None
 
     def query_objects(self, typenames: List[str]) -> List[Any]:
         cur = self._con.cursor()
@@ -60,6 +79,16 @@ class DatabaseAccessor:
         )
         return res.fetchall()
 
+    def _construct_record(self, row, constructor: Callable):
+        investment_constructors = {
+            InvestmentBuyTransaction,
+            InvestmentSellTransaction,
+            InvestmentHolding,
+        }
+        if constructor in investment_constructors:
+            return constructor(row, schema_profile=self.schema_profile)
+        return constructor(row)
+
     def get_record(self, pk_id: ID, constructor: Callable = Record):
         cur = self._con.cursor()
         res = cur.execute(
@@ -70,7 +99,7 @@ class DatabaseAccessor:
             [pk_id],
         )
 
-        return constructor(res.fetchone())
+        return self._construct_record(res.fetchone(), constructor)
 
     def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
         cur = self._con.cursor()
@@ -82,10 +111,12 @@ class DatabaseAccessor:
             [gid],
         )
 
-        return constructor(res.fetchone())
+        return self._construct_record(res.fetchone(), constructor)
 
     def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, Decimal]]]:
         transaction_map: Dict[ID, List[Tuple[ID, Decimal]]] = defaultdict(list)
+        if not self._table_exists("ZCATEGORYASSIGMENT"):
+            return transaction_map
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -101,6 +132,8 @@ class DatabaseAccessor:
 
     def get_refund_maps(self) -> Dict[ID, ID]:
         refund_to_withdraw: Dict[ID, ID] = {}
+        if not self._table_exists("ZWITHDRAWREFUNDTRANSACTIONLINK"):
+            return refund_to_withdraw
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -114,6 +147,8 @@ class DatabaseAccessor:
 
     def get_tags_map(self) -> Dict[ID, List[ID]]:
         transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
+        if not self._table_exists("Z_36TAGS"):
+            return transactions_to_tags
         cur = self._con.cursor()
         res = cur.execute(
             """
