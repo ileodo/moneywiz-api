@@ -3,7 +3,8 @@
 ![Static Badge](https://img.shields.io/badge/Python-3-blue?style=flat&logo=Python)
 ![PyPI](https://img.shields.io/pypi/v/moneywiz-api)
 
-<a href="https://www.buymeacoffee.com/Ileodo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+Support the original author on
+[Buy Me a Coffee](https://www.buymeacoffee.com/Ileodo).
 
 A Python API to access MoneyWiz Sqlite database.
 
@@ -39,6 +40,21 @@ print(record)
 ```
 
 It also offers a interactive shell `moneywiz-cli`.
+
+## Tests
+
+Run unit tests without a database:
+
+```bash
+uv run pytest tests/unit
+```
+
+Integration tests are opt-in and never read a CLI default database path. Point
+`MONEYWIZ_TEST_DB_PATH` at a disposable MoneyWiz SQLite test database:
+
+```bash
+MONEYWIZ_TEST_DB_PATH=/absolute/path/to/test.sqlite uv run pytest tests
+```
 
 ## Contribution
 
