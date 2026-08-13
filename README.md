@@ -14,7 +14,6 @@ pip install moneywiz-api
 ```
 
 ```python
-
 from moneywiz_api import MoneywizApi
 
 moneywizApi = MoneywizApi("<path_to_your_sqlite_file>")
@@ -37,7 +36,6 @@ moneywizApi = MoneywizApi("<path_to_your_sqlite_file>")
 
 record = accessor.get_record(record_id)
 print(record)
-
 ```
 
 It also offers a interactive shell `moneywiz-cli`.
