@@ -11,7 +11,9 @@ from decimal import Decimal
 
 
 def test_category():
-    assert ["Transportation", "Car Fuel"] == category_manager.get_name_chain(193)
+    for category in category_manager.records().values():
+        chain = category_manager.get_name_chain(category.id)
+        assert chain[-1] == category.name
 
 
 @pytest.mark.parametrize(

@@ -18,11 +18,7 @@ from conftest import account_manager, investment_holding_manager, transaction_ma
 
 @pytest.mark.parametrize(
     "investment_account",
-    [
-        x
-        for x in account_manager.get_accounts_for_user(2)
-        if isinstance(x, InvestmentAccount)
-    ],
+    [x for x in account_manager.records().values() if isinstance(x, InvestmentAccount)],
 )
 def test_all_investment_account_holdings(investment_account: InvestmentAccount):
     _holdings = investment_holding_manager.get_holdings_for_account(
