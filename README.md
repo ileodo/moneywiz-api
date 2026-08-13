@@ -40,6 +40,21 @@ print(record)
 
 It also offers a interactive shell `moneywiz-cli`.
 
+## Tests
+
+Run unit tests without a database:
+
+```bash
+uv run pytest tests/unit
+```
+
+Integration tests are opt-in and never read a CLI default database path. Point
+`MONEYWIZ_TEST_DB_PATH` at a disposable MoneyWiz SQLite test database:
+
+```bash
+MONEYWIZ_TEST_DB_PATH=/absolute/path/to/test.sqlite uv run pytest tests
+```
+
 ## Contribution
 
 This project is in very early stage, all contributions are welcomed!
