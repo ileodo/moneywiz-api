@@ -4,6 +4,7 @@ from typing import Dict, Generic, TypeVar, Callable
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.record import Record
+from moneywiz_api.schema_profile import UnsupportedInvestmentSchemaError
 from moneywiz_api.types import ID, GID
 
 
@@ -32,6 +33,8 @@ class RecordManager(ABC, Generic[T]):
                     obj = self.construct_record(
                         self.ents[typename], record, db_accessor
                     )
+                except UnsupportedInvestmentSchemaError:
+                    raise
                 except (AssertionError, KeyError, ValueError) as exc:
                     record_id = record.get("Z_PK")
                     detail = type(exc).__name__

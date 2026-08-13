@@ -44,8 +44,8 @@ class InvestmentHolding(Record):
 
     def __init__(self, row, schema_profile: SchemaProfile | None = None):
         super().__init__(row)
-        if schema_profile is not None and not schema_profile.is_known:
-            raise ValueError("unsupported investment schema profile")
+        if schema_profile is not None:
+            schema_profile.require_known()
         self.account = row["ZINVESTMENTACCOUNT"]
         self.opening_number_of_shares = RDH.get_nullable_decimal(
             row, "ZOPENNINGNUMBEROFSHARES"

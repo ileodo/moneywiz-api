@@ -10,7 +10,7 @@ from moneywiz_api.model.transaction import (
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
 )
-from moneywiz_api.schema_profile import SchemaProfile
+from moneywiz_api.schema_profile import SchemaProfile, UnsupportedInvestmentSchemaError
 
 
 UNSUFFIXED_PROFILE = SchemaProfile(
@@ -158,6 +158,18 @@ def test_managers_load_profiled_investment_records() -> None:
 
     assert transaction_manager.get(40).price_per_share == Decimal("10.0")
     assert holding_manager.get(24).number_of_shares == Decimal("2.0")
+
+
+def test_managers_propagate_unsupported_investment_schema_errors() -> None:
+    accessor = ManagerAccessor(
+        "InvestmentBuyTransaction", investment_transaction_row(40, -20.0)
+    )
+    accessor.schema_profile = UNKNOWN_PROFILE
+
+    with pytest.raises(
+        UnsupportedInvestmentSchemaError, match="unsupported investment schema profile"
+    ):
+        TransactionManager().load(accessor)
 
 
 class StaticCursor:

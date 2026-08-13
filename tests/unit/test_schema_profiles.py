@@ -1,5 +1,7 @@
 import sqlite3
 
+import pytest
+
 from moneywiz_api.model.raw_data_handler import RawDataHandler
 from moneywiz_api.schema_profile import detect_schema_profile
 
@@ -22,8 +24,8 @@ def test_detects_suffixed_fixture_profile() -> None:
     assert profile.price_per_share_column == "ZPRICEPERSHARE1"
 
 
-def test_detects_unsuffixed_live_profile() -> None:
-    connection = make_connection("ZNUMBEROFSHARES", "ZPRICEPERSHARE", "ZPRICEPERSHARE1")
+def test_detects_unsuffixed_fixture_profile() -> None:
+    connection = make_connection("ZNUMBEROFSHARES", "ZPRICEPERSHARE")
 
     profile = detect_schema_profile(connection)
 
@@ -44,26 +46,23 @@ def test_detects_mixed_investment_columns() -> None:
     assert profile.price_per_share_column == "ZPRICEPERSHARE1"
 
 
-def test_detects_consumer_specific_mixed_share_columns() -> None:
-    connection = make_connection(
-        "ZNUMBEROFSHARES", "ZNUMBEROFSHARES1", "ZPRICEPERSHARE1"
-    )
-
-    profile = detect_schema_profile(connection)
-
-    assert profile.profile_id == "mixed-investment-columns"
-    assert profile.holding_number_of_shares_column == "ZNUMBEROFSHARES"
-    assert profile.transaction_number_of_shares_column == "ZNUMBEROFSHARES1"
-    assert profile.price_per_share_column == "ZPRICEPERSHARE1"
-
-
-def test_rejects_ambiguous_investment_column_profile() -> None:
-    connection = make_connection(
-        "ZNUMBEROFSHARES",
-        "ZNUMBEROFSHARES1",
-        "ZPRICEPERSHARE",
-        "ZPRICEPERSHARE1",
-    )
+@pytest.mark.parametrize(
+    "columns",
+    [
+        ("ZNUMBEROFSHARES", "ZNUMBEROFSHARES1", "ZPRICEPERSHARE"),
+        ("ZNUMBEROFSHARES", "ZNUMBEROFSHARES1", "ZPRICEPERSHARE1"),
+        ("ZNUMBEROFSHARES", "ZPRICEPERSHARE", "ZPRICEPERSHARE1"),
+        ("ZNUMBEROFSHARES1", "ZPRICEPERSHARE", "ZPRICEPERSHARE1"),
+        (
+            "ZNUMBEROFSHARES",
+            "ZNUMBEROFSHARES1",
+            "ZPRICEPERSHARE",
+            "ZPRICEPERSHARE1",
+        ),
+    ],
+)
+def test_rejects_ambiguous_investment_column_profiles(columns: tuple[str, ...]) -> None:
+    connection = make_connection(*columns)
 
     profile = detect_schema_profile(connection)
 
