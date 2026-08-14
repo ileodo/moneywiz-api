@@ -1,4 +1,5 @@
 import sqlite3
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Any, Callable, Tuple
@@ -112,17 +113,55 @@ class DatabaseAccessor:
             refund_to_withdraw[row["ZREFUNDTRANSACTION"]] = row["ZWITHDRAWTRANSACTION"]
         return refund_to_withdraw
 
-    def get_tags_map(self) -> Dict[ID, List[ID]]:
-        transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
+    def _get_tags_table_info(self) -> Tuple[str, str, str]:
         cur = self._con.cursor()
         res = cur.execute(
             """
-        SELECT Z_36TRANSACTIONS, Z_35TAGS FROM  Z_36TAGS
+        SELECT name FROM sqlite_master WHERE type = 'table'
+
+        """
+        )
+        tag_tables = []
+        for row in res.fetchall():
+            match = re.fullmatch(r"Z_(\d+)TAGS", row["name"])
+            if match:
+                tag_tables.append((int(match.group(1)), row["name"]))
+
+        if not tag_tables:
+            raise ValueError("Could not find a tags join table matching Z_<number>TAGS")
+
+        tags_table_name = max(tag_tables)[1]
+        res = cur.execute(f'PRAGMA table_info("{tags_table_name}")')
+        columns = [row["name"] for row in res.fetchall()]
+
+        transactions_columns = [
+            column
+            for column in columns
+            if re.fullmatch(r"Z_\d+TRANSACTIONS", column)
+        ]
+        tags_columns = [
+            column for column in columns if re.fullmatch(r"Z_\d+TAGS", column)
+        ]
+
+        if len(transactions_columns) != 1 or len(tags_columns) != 1:
+            raise ValueError(
+                f"Could not find expected tag columns in {tags_table_name}"
+            )
+
+        return tags_table_name, transactions_columns[0], tags_columns[0]
+
+    def get_tags_map(self) -> Dict[ID, List[ID]]:
+        transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
+        cur = self._con.cursor()
+        tags_table_name, transactions_column, tags_column = self._get_tags_table_info()
+        res = cur.execute(
+            f"""
+        SELECT {transactions_column}, {tags_column} FROM "{tags_table_name}"
         
         """
         )
         for row in res.fetchall():
-            transactions_to_tags[row["Z_36TRANSACTIONS"]].append(row["Z_35TAGS"])
+            transactions_to_tags[row[transactions_column]].append(row[tags_column])
         return transactions_to_tags
 
     def get_users(self) -> Dict[ID, str]:

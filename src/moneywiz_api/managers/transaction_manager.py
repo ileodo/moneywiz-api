@@ -1,27 +1,27 @@
 from datetime import datetime
-from typing import Dict, Callable, List, Tuple
 from decimal import Decimal
+from typing import Callable, Dict, List, Tuple
 
 from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.managers.record_manager import RecordManager
 from moneywiz_api.model.transaction import (
-    Transaction,
     DepositTransaction,
-    InvestmentExchangeTransaction,
     InvestmentBuyTransaction,
+    InvestmentExchangeTransaction,
     InvestmentSellTransaction,
     ReconcileTransaction,
     RefundTransaction,
+    Transaction,
     TransferBudgetTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
     WithdrawTransaction,
 )
-from moneywiz_api.managers.record_manager import RecordManager
 from moneywiz_api.types import ID
 
 
 class TransactionManager(RecordManager[Transaction]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = {}
         self.refund_maps: Dict[ID, ID] = {}
