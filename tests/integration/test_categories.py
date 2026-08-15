@@ -32,13 +32,18 @@ def test_category_assignment_refund_transactions(transaction: Transaction):
     original_transaction_id = (
         transaction_manager.original_transaction_for_refund_transaction(transaction.id)
     )
+    assert original_transaction_id is not None
     original_transaction = transaction_manager.get(original_transaction_id)
+    assert original_transaction is not None
     original_category_assignment = transaction_manager.category_for_transaction(
         original_transaction_id
     )
 
     if category_assignment is None and original_category_assignment is None:
         return
+
+    assert category_assignment is not None
+    assert original_category_assignment is not None
 
     assert len(category_assignment) == len(original_category_assignment)
 
