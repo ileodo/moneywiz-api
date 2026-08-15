@@ -36,12 +36,6 @@ moneywiz_api = ["py.typed"]
 pythonpath = [".", "src"]
 
 
-# [tool.mypy]
-# [[tool.mypy.overrides]]
-# module = "tests.integration.*"
-# ignore_errors = true
-
-
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
