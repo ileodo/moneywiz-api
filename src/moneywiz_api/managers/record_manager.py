@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar, Callable
+from typing import Callable, Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.record import Record
-from moneywiz_api.types import ID, GID
-
+from moneywiz_api.model.schema_mapped_row import mapped_row
+from moneywiz_api.types import GID, ID
 
 T = TypeVar("T", bound=Record)
 
@@ -24,9 +24,14 @@ class RecordManager(ABC, Generic[T]):
 
         for record in records:
             typename = db_accessor.typename_for(record["Z_ENT"])
-            if typename in self.ents:
-                obj = self.ents[typename](record)
-                self.add(obj)
+            assert typename in self.ents, (
+                f"Unknown typename {typename} for record {record}"
+            )
+
+            model_cls = self.ents[typename]
+            obj = model_cls(mapped_row(record, model_cls))
+            obj.validate()
+            self.add(obj)
 
     def add(self, record: T) -> None:
         self._records[record.id] = record

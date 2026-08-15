@@ -1,13 +1,13 @@
-import sqlite3
 import re
+import sqlite3
 from collections import defaultdict
-from pathlib import Path
-from typing import Dict, List, Any, Callable, Tuple
 from decimal import Decimal
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Tuple
 
-from moneywiz_api.model.record import Record
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
-from moneywiz_api.types import ENT_ID, ID, GID
+from moneywiz_api.model.record import Record
+from moneywiz_api.types import ENT_ID, GID, ID
 
 
 class DatabaseAccessor:
@@ -45,7 +45,9 @@ class DatabaseAccessor:
         )
 
     def typename_for(self, ent_id: ENT_ID) -> str:
-        return self._ent_to_typename.get(ent_id)
+        typename = self._ent_to_typename.get(ent_id)
+        assert typename is not None, f"Unknown ent_id {ent_id}"
+        return typename
 
     def ent_for(self, typename: str) -> ENT_ID:
         return self._typename_to_ent.get(typename)
@@ -96,7 +98,7 @@ class DatabaseAccessor:
         )
         for row in res.fetchall():
             transaction_map[row["ZTRANSACTION"]].append(
-                (row["ZCATEGORY"], RDH.get_decimal(row, "ZAMOUNT"))
+                (row["ZCATEGORY"], RDH.get_decimal(row["ZAMOUNT"]))
             )
         return transaction_map
 
@@ -135,9 +137,7 @@ class DatabaseAccessor:
         columns = [row["name"] for row in res.fetchall()]
 
         transactions_columns = [
-            column
-            for column in columns
-            if re.fullmatch(r"Z_\d+TRANSACTIONS", column)
+            column for column in columns if re.fullmatch(r"Z_\d+TRANSACTIONS", column)
         ]
         tags_columns = [
             column for column in columns if re.fullmatch(r"Z_\d+TAGS", column)

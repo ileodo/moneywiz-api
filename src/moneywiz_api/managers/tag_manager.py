@@ -1,7 +1,7 @@
-from typing import Dict, Callable
+from typing import Callable, Dict
 
-from moneywiz_api.model import Tag
 from moneywiz_api.managers.record_manager import RecordManager
+from moneywiz_api.model import Tag
 
 
 class TagManager(RecordManager[Tag]):
