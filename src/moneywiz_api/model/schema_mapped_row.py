@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Mapping
+from typing import Any, Callable, Dict
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 

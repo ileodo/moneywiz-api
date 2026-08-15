@@ -7,19 +7,19 @@ ${VENV}/bin/activate:
 venv: ${VENV}/bin/activate
 
 install: pyproject.toml venv
-	${VENV}/bin/pip3 install -e .
+	${VENV}/bin/pip3 install -e .[dev]
 
 test:
 	${VENV}/bin/python -m pytest tests
 
-pylint:
-	${VENV}/bin/python -m pylint --rcfile .pylintrc src
+ruff:
+	${VENV}/bin/python -m ruff check
 
 mypy:
 	${VENV}/bin/python -m mypy src
 
 format:
-	${VENV}/bin/python -m black -l 88 src tests
+	${VENV}/bin/python -m ruff format
 
 shell:
 	${VENV}/bin/python src/moneywiz_api/cli/cli.py

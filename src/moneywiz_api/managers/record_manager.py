@@ -10,7 +10,7 @@ T = TypeVar("T", bound=Record)
 
 
 class RecordManager(ABC, Generic[T]):
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: Dict[ID, T] = {}
         self._gid_to_id: Dict[GID, ID] = {}
 

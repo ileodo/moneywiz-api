@@ -1,5 +1,11 @@
 {
   "python.terminal.launchArgs": [],
   "pylint.importStrategy": "useBundled",
-  "cSpell.words": ["moneywiz", "Unconfigured"]
+  "cSpell.words": [
+    "ents",
+    "moneywiz",
+    "personalfinance",
+    "setuptools",
+    "Unconfigured"
+  ]
 }

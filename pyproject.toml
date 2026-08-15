@@ -28,6 +28,10 @@ moneywiz-cli = "moneywiz_api.cli.cli:main"
 "Bug Tracker" = "https://github.com/ileodo/moneywiz-api/issues"
 
 
+[tool.setuptools.package-data]
+moneywiz_api = ["py.typed"]
+
+
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
 

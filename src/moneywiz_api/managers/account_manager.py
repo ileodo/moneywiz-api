@@ -1,16 +1,15 @@
-from typing import Dict, Callable, List
+from typing import Callable, Dict, List
 
-from moneywiz_api.model.account import Account
 from moneywiz_api.managers.record_manager import RecordManager
-
 from moneywiz_api.model.account import (
+    Account,
     BankChequeAccount,
     BankSavingAccount,
     CashAccount,
     CreditCardAccount,
-    LoanAccount,
-    InvestmentAccount,
     ForexAccount,
+    InvestmentAccount,
+    LoanAccount,
 )
 from moneywiz_api.types import ID
 
