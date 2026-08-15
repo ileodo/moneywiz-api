@@ -1,4 +1,4 @@
-from typing import Dict, Callable, List
+from typing import Dict, List
 
 from moneywiz_api.model.category import Category
 from moneywiz_api.managers.record_manager import RecordManager
@@ -10,7 +10,7 @@ class CategoryManager(RecordManager[Category]):
         super().__init__()
 
     @property
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[Category]]:
         return {
             "Category": Category,
         }
@@ -28,6 +28,7 @@ class CategoryManager(RecordManager[Category]):
 
     def get_name_chain_by_gid(self, category_gid: GID) -> List[str]:
         current = self.get_by_gid(category_gid)
+        assert current is not None, f"Unknown category gid {category_gid}"
         return self.get_name_chain(current.id)
 
     def get_categories_for_user(self, user_id: ID) -> List[Category]:

@@ -13,7 +13,11 @@ from moneywiz_api.model.transaction import (
 from moneywiz_api.types import ID
 
 
-from conftest import account_manager, investment_holding_manager, transaction_manager
+from tests.integration.conftest import (
+    account_manager,
+    investment_holding_manager,
+    transaction_manager,
+)
 
 
 @pytest.mark.parametrize(

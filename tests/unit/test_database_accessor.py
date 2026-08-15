@@ -19,12 +19,8 @@ def test_get_tags_map_uses_highest_numbered_tags_table(tmp_path):
     db_path = tmp_path / "moneywiz.sqlite"
     accessor = _create_accessor(db_path)
     cur = accessor._con.cursor()
-    cur.execute(
-        "CREATE TABLE Z_36TAGS (Z_1TRANSACTIONS INTEGER, Z_2TAGS INTEGER)"
-    )
-    cur.execute(
-        "CREATE TABLE Z_37TAGS (Z_3TRANSACTIONS INTEGER, Z_4TAGS INTEGER)"
-    )
+    cur.execute("CREATE TABLE Z_36TAGS (Z_1TRANSACTIONS INTEGER, Z_2TAGS INTEGER)")
+    cur.execute("CREATE TABLE Z_37TAGS (Z_3TRANSACTIONS INTEGER, Z_4TAGS INTEGER)")
     cur.execute("INSERT INTO Z_36TAGS VALUES (1, 10)")
     cur.execute("INSERT INTO Z_37TAGS VALUES (2, 20)")
     cur.execute("INSERT INTO Z_37TAGS VALUES (2, 21)")

@@ -18,7 +18,7 @@ classifiers = [
 dependencies = ["click", "pandas", "pytest"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "mypy", "build", "twine"]
+dev = ["pytest", "pytest-cov", "ruff", "mypy", "pandas-stubs", "build", "twine"]
 
 [project.scripts]
 moneywiz-cli = "moneywiz_api.cli.cli:main"
@@ -34,6 +34,12 @@ moneywiz_api = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
+
+
+# [tool.mypy]
+# [[tool.mypy.overrides]]
+# module = "tests.integration.*"
+# ignore_errors = true
 
 
 [tool.ruff]

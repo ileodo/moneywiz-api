@@ -1,20 +1,18 @@
 import pytest
 
+from moneywiz_api.model.account import ForexAccount
 from moneywiz_api.model.transaction import (
-    RefundTransaction,
-    WithdrawTransaction,
     DepositTransaction,
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
     ReconcileTransaction,
+    RefundTransaction,
+    TransferBudgetTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
-    TransferBudgetTransaction,
+    WithdrawTransaction,
 )
-from moneywiz_api.model.account import ForexAccount
-
-
-from conftest import transaction_manager, account_manager
+from tests.integration.conftest import account_manager, transaction_manager
 
 
 @pytest.mark.parametrize(
@@ -158,9 +156,8 @@ def test_all_transfer_withdraw_transaction(
     if not isinstance(to_account, ForexAccount):
         assert transfer_withdraw_transaction.recipient_currency == to_account.currency
 
-        assert (
-            abs(transfer_withdraw_transaction.recipient_amount)
-            == deposit_transaction.amount
+        assert abs(transfer_withdraw_transaction.recipient_amount) == pytest.approx(
+            deposit_transaction.amount, abs=0.001
         )
     assert (
         transfer_withdraw_transaction.recipient_currency

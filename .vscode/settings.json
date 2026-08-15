@@ -7,5 +7,6 @@
     "personalfinance",
     "setuptools",
     "Unconfigured"
-  ]
+  ],
+  "ruff.configuration": ""
 }

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Generic, TypeVar
+from typing import Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.record import Record
@@ -16,11 +16,11 @@ class RecordManager(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[T]]:
         raise NotImplementedError()
 
     def load(self, db_accessor: DatabaseAccessor) -> None:
-        records = db_accessor.query_objects(self.ents.keys())
+        records = db_accessor.query_objects(list(self.ents.keys()))
 
         for record in records:
             typename = db_accessor.typename_for(record["Z_ENT"])
@@ -46,7 +46,10 @@ class RecordManager(ABC, Generic[T]):
         return self._records.get(record_id)
 
     def get_by_gid(self, gid: GID) -> T | None:
-        return self._records.get(self._gid_to_id.get(gid))
+        record_id = self._gid_to_id.get(gid)
+        if record_id is None:
+            return None
+        return self._records.get(record_id)
 
     def records(self) -> Dict[ID, T]:
         return self._records

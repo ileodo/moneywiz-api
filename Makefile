@@ -16,7 +16,7 @@ ruff:
 	${VENV}/bin/python -m ruff check
 
 mypy:
-	${VENV}/bin/python -m mypy src
+	${VENV}/bin/python -m mypy src tests
 
 format:
 	${VENV}/bin/python -m ruff format

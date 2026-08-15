@@ -1,5 +1,5 @@
-from pathlib import Path
 import logging
+from pathlib import Path
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.managers.account_manager import AccountManager
@@ -8,8 +8,8 @@ from moneywiz_api.managers.investment_holding_manager import (
     InvestmentHoldingManager,
 )
 from moneywiz_api.managers.payee_manager import PayeeManager
-from moneywiz_api.managers.transaction_manager import TransactionManager
 from moneywiz_api.managers.tag_manager import TagManager
+from moneywiz_api.managers.transaction_manager import TransactionManager
 
 logger = logging.getLogger(__name__)
 

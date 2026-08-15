@@ -50,7 +50,9 @@ class DatabaseAccessor:
         return typename
 
     def ent_for(self, typename: str) -> ENT_ID:
-        return self._typename_to_ent.get(typename)
+        ent_id = self._typename_to_ent.get(typename)
+        assert ent_id is not None, f"Unknown typename {typename}"
+        return ent_id
 
     def query_objects(self, typenames: List[str]) -> List[Any]:
         cur = self._con.cursor()
