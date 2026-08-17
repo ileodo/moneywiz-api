@@ -1,34 +1,29 @@
-from typing import Optional, Dict, Any
 from datetime import datetime
 from decimal import Decimal
+from typing import Any, Dict, Optional
 
 from moneywiz_api.utils import get_datetime
 
 
 class RawDataHandler:
     @staticmethod
-    def get_datetime(row: Dict[str, Any], key: str) -> datetime:
-        raw_value = row[key]
+    def get_datetime(raw_value: Any) -> datetime:
         assert isinstance(raw_value, float) or isinstance(raw_value, int), (
-            f"row['{key}'] = {row[key]}, is not a float or int, where row is: "
-            + str(RawDataHandler.filter_row(row))
+            f"{raw_value} is not a float or int"
         )
         return get_datetime(raw_value)
 
     @staticmethod
-    def get_nullable_decimal(row: Dict[str, Any], key: str) -> Optional[Decimal]:
-        raw_value = row[key]
+    def get_nullable_decimal(raw_value: Any) -> Optional[Decimal]:
         if raw_value is None:
             return None
         else:
-            return RawDataHandler.get_decimal(row, key)
+            return RawDataHandler.get_decimal(raw_value)
 
     @staticmethod
-    def get_decimal(row: Dict[str, Any], key: str) -> Decimal:
-        raw_value = row[key]
+    def get_decimal(raw_value: Any) -> Decimal:
         assert isinstance(raw_value, float) or isinstance(raw_value, int), (
-            f"row['{key}'] = {row[key]}, is not a float or int, where row is: "
-            + str(RawDataHandler.filter_row(row))
+            f"{raw_value}, is not a float or int"
         )
         return Decimal(str(raw_value))
 

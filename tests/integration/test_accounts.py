@@ -1,21 +1,20 @@
 from collections import defaultdict
-from typing import Dict
 from decimal import Decimal
+from typing import Dict
 
 import pytest
+
 from moneywiz_api.model.transaction import (
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
 )
 from moneywiz_api.types import ID
-
-
-from conftest import (
+from tests.integration.conftest import (
+    BALANCE_AS_OF_DATE,
+    CASH_BALANCES,
+    HOLDINGS_BALANCES,
     account_manager,
     transaction_manager,
-    CASH_BALANCES,
-    BALANCE_AS_OF_DATE,
-    HOLDINGS_BALANCES,
 )
 
 
@@ -27,7 +26,9 @@ def test_cash_balance(test_account: int, expected_balance: Decimal):
     records = transaction_manager.get_all_for_account(
         test_account, until=BALANCE_AS_OF_DATE
     )
-    balance = account_manager.get(test_account).opening_balance
+    account = account_manager.get(test_account)
+    assert account is not None, f"Account {test_account} not found"
+    balance = account.opening_balance
 
     for record in records:
         balance += record.amount

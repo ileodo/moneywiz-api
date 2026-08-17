@@ -42,7 +42,7 @@ def get_default_path() -> Path:
     ),
     help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
 )
-def main(db_file_path, demo_dump, log_level):
+def main(db_file_path, demo_dump, log_level) -> None:
     """
     Interactive shell to access MoneyWiz (Read-only)
     """

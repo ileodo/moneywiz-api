@@ -18,7 +18,7 @@ classifiers = [
 dependencies = ["click", "pandas", "pytest"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "mypy", "build", "twine"]
+dev = ["pytest", "pytest-cov", "ruff", "mypy", "pandas-stubs", "build", "twine"]
 
 [project.scripts]
 moneywiz-cli = "moneywiz_api.cli.cli:main"
@@ -26,6 +26,10 @@ moneywiz-cli = "moneywiz_api.cli.cli:main"
 [project.urls]
 "Homepage" = "https://github.com/ileodo/moneywiz-api"
 "Bug Tracker" = "https://github.com/ileodo/moneywiz-api/issues"
+
+
+[tool.setuptools.package-data]
+moneywiz_api = ["py.typed"]
 
 
 [tool.pytest.ini_options]

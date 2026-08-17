@@ -1,6 +1,6 @@
 from collections import defaultdict
-from typing import Dict, List
 from decimal import Decimal
+from typing import Dict, List
 
 
 import pytest
@@ -13,7 +13,11 @@ from moneywiz_api.model.transaction import (
 from moneywiz_api.types import ID
 
 
-from conftest import account_manager, investment_holding_manager, transaction_manager
+from tests.integration.conftest import (
+    account_manager,
+    investment_holding_manager,
+    transaction_manager,
+)
 
 
 @pytest.mark.parametrize(
@@ -26,10 +30,8 @@ def test_all_investment_account_holdings(investment_account: InvestmentAccount):
     )
     transactions = transaction_manager.get_all_for_account(investment_account.id)
 
-    NumberOfShare = Decimal
-    CostValue = Decimal
-    holdings_from_transactions: Dict[ID, List[NumberOfShare, CostValue]] = defaultdict(
-        lambda: [0, 0]
+    holdings_from_transactions: Dict[ID, List[Decimal]] = defaultdict(
+        lambda: [Decimal(0), Decimal(0)]
     )
     for transaction in transactions:
         if isinstance(transaction, InvestmentBuyTransaction):

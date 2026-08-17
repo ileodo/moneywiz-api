@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -21,12 +22,12 @@ if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
     TEST_DB_PATH = test_config.get_test_db_path()
     moneywizApi = MoneywizApi(TEST_DB_PATH)
 
-    accessor = moneywizApi.accessor
-    account_manager = moneywizApi.account_manager
-    payee_manager = moneywizApi.payee_manager
-    category_manager = moneywizApi.category_manager
-    transaction_manager = moneywizApi.transaction_manager
-    investment_holding_manager = moneywizApi.investment_holding_manager
+    accessor: Any = moneywizApi.accessor
+    account_manager: Any = moneywizApi.account_manager
+    payee_manager: Any = moneywizApi.payee_manager
+    category_manager: Any = moneywizApi.category_manager
+    transaction_manager: Any = moneywizApi.transaction_manager
+    investment_holding_manager: Any = moneywizApi.investment_holding_manager
 else:
     accessor = _UnconfiguredManager()
     account_manager = _UnconfiguredManager()

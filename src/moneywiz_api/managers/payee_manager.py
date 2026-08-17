@@ -1,4 +1,4 @@
-from typing import Dict, Callable
+from typing import Dict
 
 from moneywiz_api.model.payee import Payee
 from moneywiz_api.managers.record_manager import RecordManager
@@ -9,7 +9,7 @@ class PayeeManager(RecordManager[Payee]):
         super().__init__()
 
     @property
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[Payee]]:
         return {
             "Payee": Payee,
         }

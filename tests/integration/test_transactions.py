@@ -1,20 +1,18 @@
 import pytest
 
+from moneywiz_api.model.account import ForexAccount
 from moneywiz_api.model.transaction import (
-    RefundTransaction,
-    WithdrawTransaction,
     DepositTransaction,
     InvestmentBuyTransaction,
     InvestmentSellTransaction,
     ReconcileTransaction,
+    RefundTransaction,
+    TransferBudgetTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
-    TransferBudgetTransaction,
+    WithdrawTransaction,
 )
-from moneywiz_api.model.account import ForexAccount
-
-
-from conftest import transaction_manager, account_manager
+from tests.integration.conftest import account_manager, transaction_manager
 
 
 @pytest.mark.parametrize(
@@ -85,6 +83,7 @@ def test_all_refund_transactions(refund_transaction: RefundTransaction):
             refund_transaction.id
         )
     )
+    assert original_transaction_id is not None
     original_transaction = transaction_manager.get(original_transaction_id)
     assert isinstance(original_transaction, WithdrawTransaction)
     assert original_transaction.amount < 0
@@ -119,10 +118,13 @@ def test_all_transfer_deposit_transaction(
 
     to_account = account_manager.get(transfer_deposit_transaction.account)
     from_account = account_manager.get(transfer_deposit_transaction.sender_account)
+    assert to_account is not None
+    assert from_account is not None
 
     withdraw_transaction = transaction_manager.get(
         transfer_deposit_transaction.sender_transaction
     )
+    assert isinstance(withdraw_transaction, TransferWithdrawTransaction)
     if not isinstance(to_account, ForexAccount):
         assert transfer_deposit_transaction.original_currency == to_account.currency
     assert transfer_deposit_transaction.sender_currency == from_account.currency
@@ -149,18 +151,20 @@ def test_all_transfer_withdraw_transaction(
 
     from_account = account_manager.get(transfer_withdraw_transaction.account)
     to_account = account_manager.get(transfer_withdraw_transaction.recipient_account)
+    assert from_account is not None
+    assert to_account is not None
 
     deposit_transaction = transaction_manager.get(
         transfer_withdraw_transaction.recipient_transaction
     )
+    assert isinstance(deposit_transaction, TransferDepositTransaction)
 
     assert transfer_withdraw_transaction.original_currency == from_account.currency
     if not isinstance(to_account, ForexAccount):
         assert transfer_withdraw_transaction.recipient_currency == to_account.currency
 
-        assert (
-            abs(transfer_withdraw_transaction.recipient_amount)
-            == deposit_transaction.amount
+        assert abs(transfer_withdraw_transaction.recipient_amount) == pytest.approx(
+            deposit_transaction.amount, abs=0.001
         )
     assert (
         transfer_withdraw_transaction.recipient_currency

@@ -1,4 +1,4 @@
-from typing import Dict, Callable, List
+from typing import Dict, List
 from decimal import Decimal
 
 from moneywiz_api.model.investment_holding import InvestmentHolding
@@ -11,7 +11,7 @@ class InvestmentHoldingManager(RecordManager[InvestmentHolding]):
         super().__init__()
 
     @property
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[InvestmentHolding]]:
         return {
             "InvestmentHolding": InvestmentHolding,
         }

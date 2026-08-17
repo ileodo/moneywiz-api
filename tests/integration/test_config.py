@@ -1,9 +1,12 @@
 import os
 import sqlite3
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
+
+from moneywiz_api.types import ID
 
 
 def get_test_db_path() -> Path:
@@ -41,5 +44,5 @@ BALANCE_AS_OF_DATE = datetime(2025, 1, 1, 0, 0, 0)
 
 # The integration suite accepts any disposable MoneyWiz database. Fixture-specific
 # balance expectations are deliberately opt-in rather than assuming private IDs.
-CASH_BALANCES = []
-HOLDINGS_BALANCES = []
+CASH_BALANCES: list[tuple[ID, Decimal]] = []
+HOLDINGS_BALANCES: list[tuple[ID, dict[ID, Decimal]]] = []

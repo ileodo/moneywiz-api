@@ -6,8 +6,15 @@ from typing import Optional
 
 import pytest
 
-from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
+from moneywiz_api.model.schema_mapped_row import (
+    datetime_field,
+    decimal_field,
+    is_one_field,
+    mapped_row,
+    nullable_decimal_field,
+    schema_field,
+)
 from moneywiz_api.types import ID
 
 ABS_TOLERANCE = 0.001
@@ -15,9 +22,13 @@ ABS_TOLERANCE = 0.001
 
 @dataclass
 class Transaction(Record, ABC):
-    """
-    ENT: 36
-    """
+    FIELDS = {
+        "reconciled": is_one_field("ZRECONCILED"),
+        "amount": decimal_field("ZAMOUNT1"),
+        "description": schema_field("ZDESC2"),
+        "datetime": datetime_field("ZDATE1"),
+        "notes": schema_field("ZNOTES1"),
+    }
 
     reconciled: bool
 
@@ -27,16 +38,18 @@ class Transaction(Record, ABC):
     notes: Optional[str]
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.reconciled = row["ZRECONCILED"] == 1
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.description = row["ZDESC2"]
-        self.datetime = RDH.get_datetime(row, "ZDATE1")
-        self.notes = row["ZNOTES1"]
+        self.reconciled = row.get("reconciled")
+        self.amount = row.get("amount")
+        self.description = row.get("description")
+        self.datetime = row.get("datetime")
+        self.notes = row.get("notes")
 
         # Fixes
 
-        # Validate
+    def validate(self) -> None:
+        super().validate()
         assert self.reconciled is not None, self.as_dict()
         assert self.amount is not None, self.as_dict()
         assert self.description is not None, self.as_dict()
@@ -46,9 +59,13 @@ class Transaction(Record, ABC):
 
 @dataclass
 class DepositTransaction(Transaction):
-    """
-    ENT: 37
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "payee": schema_field("ZPAYEE2"),
+        "original_currency": schema_field("ZORIGINALCURRENCY"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+    }
 
     account: ID
     amount: Decimal  # neg: expense, pos: income
@@ -60,24 +77,21 @@ class DepositTransaction(Transaction):
     original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.payee = row["ZPAYEE2"]
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_exchange_rate = RDH.get_nullable_decimal(
-            row, "ZORIGINALEXCHANGERATE"
-        )
+        self.account = row.get("account")
+        self.amount = row.get("amount")
+        self.payee = row.get("payee")
+        self.original_currency = row.get("original_currency")
+        self.original_amount = row.get("original_amount")
+        self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
         if self.original_exchange_rate == Decimal(0):
             self.original_exchange_rate = None
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None, self.as_dict()
         assert self.amount is not None, self.as_dict()
         # self.payee can be None
@@ -93,9 +107,17 @@ class DepositTransaction(Transaction):
 
 @dataclass
 class InvestmentExchangeTransaction(Transaction):
-    """
-    ENT: 38
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "from_investment_holding": schema_field("ZFROMINVESTMENTHOLDING"),
+        "from_symbol": schema_field("ZFROMSYMBOL"),
+        "to_investment_holding": schema_field("ZTOINVESTMENTHOLDING"),
+        "to_symbol": schema_field("ZTOSYMBOL"),
+        "from_number_of_shares": schema_field("ZFROMNUMBEROFSHARES"),
+        "to_number_of_shares": schema_field("ZTONUMBEROFSHARES"),
+        "original_fee": schema_field("ZORIGINALFEE"),
+        "original_fee_currency": schema_field("ZORIGINALFEECURRENCY"),
+    }
 
     account: ID
 
@@ -110,18 +132,19 @@ class InvestmentExchangeTransaction(Transaction):
     original_fee_currency: str
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
 
-        self.account = row["ZACCOUNT2"]
-        self.from_investment_holding = row["ZFROMINVESTMENTHOLDING"]
-        self.from_symbol = row["ZFROMSYMBOL"]
-        self.to_investment_holding = row["ZTOINVESTMENTHOLDING"]
-        self.to_symbol = row["ZTOSYMBOL"]
-        self.from_number_of_shares = row["ZFROMNUMBEROFSHARES"]
-        self.to_number_of_shares = row["ZTONUMBEROFSHARES"]
+        self.account = row.get("account")
+        self.from_investment_holding = row.get("from_investment_holding")
+        self.from_symbol = row.get("from_symbol")
+        self.to_investment_holding = row.get("to_investment_holding")
+        self.to_symbol = row.get("to_symbol")
+        self.from_number_of_shares = row.get("from_number_of_shares")
+        self.to_number_of_shares = row.get("to_number_of_shares")
 
-        self.original_fee = row["ZORIGINALFEE"]
-        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+        self.original_fee = row.get("original_fee")
+        self.original_fee_currency = row.get("original_fee_currency")
 
         # Fixes
         if self.original_fee_currency == self.from_symbol:
@@ -129,11 +152,8 @@ class InvestmentExchangeTransaction(Transaction):
         elif self.original_fee_currency == self.to_symbol:
             self.to_number_of_shares += self.original_fee
 
-        # Validate
-        self.validate()
-
-    def validate(self):
-        assert self.account is not None
+    def validate(self) -> None:
+        super().validate()
         assert self.from_investment_holding is not None
         assert self.from_symbol
         assert self.to_investment_holding is not None
@@ -146,11 +166,8 @@ class InvestmentExchangeTransaction(Transaction):
 
 @dataclass
 class InvestmentTransaction(Transaction, ABC):
-    """
-    ENT: 39
-    """
-
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
 
 
@@ -159,6 +176,14 @@ class InvestmentBuyTransaction(InvestmentTransaction):
     """
     ENT: 40
     """
+
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "fee": decimal_field("ZFEE2"),
+        "investment_holding": schema_field("ZINVESTMENTHOLDING"),
+        "number_of_shares": decimal_field("ZNUMBEROFSHARES"),
+        "price_per_share": decimal_field("ZPRICEPERSHARE1"),
+    }
 
     account: ID
     amount: Decimal
@@ -170,23 +195,22 @@ class InvestmentBuyTransaction(InvestmentTransaction):
     price_per_share: Decimal
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
+        self.account = row.get("account")
+        self.amount = row.get("amount")
 
-        self.fee = RDH.get_decimal(row, "ZFEE2")
+        self.fee = row.get("fee")
 
-        self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
-        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
+        self.investment_holding = row.get("investment_holding")
+        self.number_of_shares = row.get("number_of_shares")
+        self.price_per_share = row.get("price_per_share")
 
         # Fixes
         self.fee = max(self.fee, 0)
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
         assert self.amount <= 0
@@ -209,9 +233,13 @@ class InvestmentBuyTransaction(InvestmentTransaction):
 
 @dataclass
 class InvestmentSellTransaction(InvestmentTransaction):
-    """
-    ENT: 41
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "fee": decimal_field("ZFEE2"),
+        "investment_holding": schema_field("ZINVESTMENTHOLDING"),
+        "number_of_shares": decimal_field("ZNUMBEROFSHARES"),
+        "price_per_share": decimal_field("ZPRICEPERSHARE1"),
+    }
 
     account: ID
     amount: Decimal  # neg: loss after fees, pos: income
@@ -223,23 +251,22 @@ class InvestmentSellTransaction(InvestmentTransaction):
     price_per_share: Decimal
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
+        self.account = row.get("account")
+        self.amount = row.get("amount")
 
-        self.fee = RDH.get_decimal(row, "ZFEE2")
+        self.fee = row.get("fee")
 
-        self.investment_holding = row["ZINVESTMENTHOLDING"]
-        self.number_of_shares = RDH.get_decimal(row, "ZNUMBEROFSHARES")
-        self.price_per_share = RDH.get_decimal(row, "ZPRICEPERSHARE1")
+        self.investment_holding = row.get("investment_holding")
+        self.number_of_shares = row.get("number_of_shares")
+        self.price_per_share = row.get("price_per_share")
 
         # Fixes
         self.fee = max(self.fee, 0)
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
 
@@ -263,9 +290,13 @@ class InvestmentSellTransaction(InvestmentTransaction):
 
 @dataclass
 class ReconcileTransaction(Transaction):
-    """
-    ENT: 42
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "reconcile_amount": nullable_decimal_field("ZRECONCILEAMOUNT"),
+        "reconcile_number_of_shares": nullable_decimal_field(
+            "ZRECONCILENUMBEROFSHARES"
+        ),
+    }
 
     account: ID
 
@@ -273,17 +304,14 @@ class ReconcileTransaction(Transaction):
     reconcile_number_of_shares: Decimal | None  # new balance
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.reconcile_amount = RDH.get_nullable_decimal(row, "ZRECONCILEAMOUNT")
-        self.reconcile_number_of_shares = RDH.get_nullable_decimal(
-            row, "ZRECONCILENUMBEROFSHARES"
-        )
+        self.account = row.get("account")
+        self.reconcile_amount = row.get("reconcile_amount")
+        self.reconcile_number_of_shares = row.get("reconcile_number_of_shares")
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert (
             self.reconcile_amount is not None
@@ -293,9 +321,13 @@ class ReconcileTransaction(Transaction):
 
 @dataclass
 class RefundTransaction(Transaction):
-    """
-    ENT: 43
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "payee": schema_field("ZPAYEE2"),
+        "original_currency": schema_field("ZORIGINALCURRENCY"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+    }
 
     account: ID
     amount: Decimal
@@ -307,25 +339,22 @@ class RefundTransaction(Transaction):
     original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.payee = row["ZPAYEE2"]
+        self.account = row.get("account")
+        self.amount = row.get("amount")
+        self.payee = row.get("payee")
 
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_exchange_rate = RDH.get_nullable_decimal(
-            row, "ZORIGINALEXCHANGERATE"
-        )
+        self.original_currency = row.get("original_currency")
+        self.original_amount = row.get("original_amount")
+        self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
         if self.original_exchange_rate == Decimal(0):
             self.original_exchange_rate = None
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
         assert self.amount > 0
@@ -342,20 +371,26 @@ class RefundTransaction(Transaction):
 
 @dataclass
 class TransferBudgetTransaction(Transaction):
-    """
-    ENT: 44
-    """
-
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
         # TODO: Not Implemented
 
 
 @dataclass
 class TransferDepositTransaction(Transaction):
-    """
-    ENT: 45
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "sender_account": schema_field("ZSENDERACCOUNT"),
+        "sender_transaction": schema_field("ZSENDERTRANSACTION"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_currency": schema_field("ZORIGINALCURRENCY"),
+        "sender_amount": decimal_field("ZORIGINALSENDERAMOUNT"),
+        "sender_currency": schema_field("ZORIGINALSENDERCURRENCY"),
+        "original_fee": nullable_decimal_field("ZORIGINALFEE"),
+        "original_fee_currency": schema_field("ZORIGINALFEECURRENCY"),
+        "original_exchange_rate": decimal_field("ZORIGINALEXCHANGERATE"),
+    }
 
     account: ID
     amount: Decimal  # pos: in
@@ -375,30 +410,29 @@ class TransferDepositTransaction(Transaction):
     original_exchange_rate: Decimal
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
+        self.account = row.get("account")
+        self.amount = row.get("amount")
 
-        self.sender_account = row["ZSENDERACCOUNT"]
-        self.sender_transaction = row["ZSENDERTRANSACTION"]
+        self.sender_account = row.get("sender_account")
+        self.sender_transaction = row.get("sender_transaction")
 
-        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.sender_amount = RDH.get_decimal(row, "ZORIGINALSENDERAMOUNT")
-        self.sender_currency = row["ZORIGINALSENDERCURRENCY"]
+        self.original_amount = row.get("original_amount")
+        self.original_currency = row.get("original_currency")
+        self.sender_amount = row.get("sender_amount")
+        self.sender_currency = row.get("sender_currency")
 
-        self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
-        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+        self.original_fee = row.get("original_fee")
+        self.original_fee_currency = row.get("original_fee_currency")
 
-        self.original_exchange_rate = RDH.get_decimal(row, "ZORIGINALEXCHANGERATE")
+        self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
         self.original_amount = abs(self.original_amount)
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
         assert self.amount > 0
@@ -426,9 +460,18 @@ class TransferDepositTransaction(Transaction):
 
 @dataclass
 class TransferWithdrawTransaction(Transaction):
-    """
-    ENT: 46
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "recipient_account": schema_field("ZRECIPIENTACCOUNT1"),
+        "recipient_transaction": schema_field("ZRECIPIENTTRANSACTION"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_currency": schema_field("ZORIGINALCURRENCY"),
+        "recipient_amount": decimal_field("ZORIGINALRECIPIENTAMOUNT"),
+        "recipient_currency": schema_field("ZORIGINALRECIPIENTCURRENCY"),
+        "original_fee": nullable_decimal_field("ZORIGINALFEE"),
+        "original_fee_currency": schema_field("ZORIGINALFEECURRENCY"),
+        "original_exchange_rate": decimal_field("ZORIGINALEXCHANGERATE"),
+    }
 
     account: ID
     amount: Decimal  # neg: out
@@ -448,30 +491,29 @@ class TransferWithdrawTransaction(Transaction):
     original_exchange_rate: Decimal
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
+        self.account = row.get("account")
+        self.amount = row.get("amount")
 
-        self.recipient_account = row["ZRECIPIENTACCOUNT1"]
-        self.recipient_transaction = row["ZRECIPIENTTRANSACTION"]
+        self.recipient_account = row.get("recipient_account")
+        self.recipient_transaction = row.get("recipient_transaction")
 
-        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.recipient_amount = RDH.get_decimal(row, "ZORIGINALRECIPIENTAMOUNT")
-        self.recipient_currency = row["ZORIGINALRECIPIENTCURRENCY"]
+        self.original_amount = row.get("original_amount")
+        self.original_currency = row.get("original_currency")
+        self.recipient_amount = row.get("recipient_amount")
+        self.recipient_currency = row.get("recipient_currency")
 
-        self.original_fee = RDH.get_nullable_decimal(row, "ZORIGINALFEE")
-        self.original_fee_currency = row["ZORIGINALFEECURRENCY"]
+        self.original_fee = row.get("original_fee")
+        self.original_fee_currency = row.get("original_fee_currency")
 
-        self.original_exchange_rate = RDH.get_decimal(row, "ZORIGINALEXCHANGERATE")
+        self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
         self.recipient_amount = abs(self.recipient_amount)
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
         assert self.amount < 0
@@ -498,9 +540,13 @@ class TransferWithdrawTransaction(Transaction):
 
 @dataclass
 class WithdrawTransaction(Transaction):
-    """
-    ENT: 47
-    """
+    FIELDS = {
+        "account": schema_field("ZACCOUNT2"),
+        "payee": schema_field("ZPAYEE2"),
+        "original_currency": schema_field("ZORIGINALCURRENCY"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
+        "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+    }
 
     account: ID
     amount: Decimal  # neg: expense, pos: income
@@ -512,16 +558,15 @@ class WithdrawTransaction(Transaction):
     original_exchange_rate: Optional[Decimal]
 
     def __init__(self, row):
+        row = mapped_row(row, self.__class__)
         super().__init__(row)
-        self.account = row["ZACCOUNT2"]
-        self.amount = RDH.get_decimal(row, "ZAMOUNT1")
-        self.payee = row["ZPAYEE2"]
+        self.account = row.get("account")
+        self.amount = row.get("amount")
+        self.payee = row.get("payee")
 
-        self.original_currency = row["ZORIGINALCURRENCY"]
-        self.original_amount = RDH.get_decimal(row, "ZORIGINALAMOUNT")
-        self.original_exchange_rate = RDH.get_nullable_decimal(
-            row, "ZORIGINALEXCHANGERATE"
-        )
+        self.original_currency = row.get("original_currency")
+        self.original_amount = row.get("original_amount")
+        self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
         if self.amount * self.original_amount < 0:
@@ -530,10 +575,8 @@ class WithdrawTransaction(Transaction):
         if self.original_exchange_rate == Decimal(0):
             self.original_exchange_rate = None
 
-        # Validate
-        self.validate()
-
-    def validate(self):
+    def validate(self) -> None:
+        super().validate()
         assert self.account is not None
         assert self.amount is not None
         # self.payee can be None

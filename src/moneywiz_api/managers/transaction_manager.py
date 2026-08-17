@@ -1,34 +1,39 @@
 from datetime import datetime
-from typing import Dict, Callable, List, Tuple
 from decimal import Decimal
+from typing import Dict, List, Tuple, Protocol, cast
 
 from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.managers.record_manager import RecordManager
 from moneywiz_api.model.transaction import (
-    Transaction,
     DepositTransaction,
-    InvestmentExchangeTransaction,
     InvestmentBuyTransaction,
+    InvestmentExchangeTransaction,
     InvestmentSellTransaction,
     ReconcileTransaction,
     RefundTransaction,
+    Transaction,
     TransferBudgetTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
     WithdrawTransaction,
 )
-from moneywiz_api.managers.record_manager import RecordManager
 from moneywiz_api.types import ID
 
 
+class _AccountTransaction(Protocol):
+    account: ID
+    datetime: datetime
+
+
 class TransactionManager(RecordManager[Transaction]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = {}
         self.refund_maps: Dict[ID, ID] = {}
-        self.tags_map: Dict[ID, ID] = {}
+        self.tags_map: Dict[ID, List[ID]] = {}
 
     @property
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[Transaction]]:
         return {
             "DepositTransaction": DepositTransaction,
             "InvestmentExchangeTransaction": InvestmentExchangeTransaction,
@@ -44,11 +49,9 @@ class TransactionManager(RecordManager[Transaction]):
 
     def load(self, db_accessor: DatabaseAccessor) -> None:
         super().load(db_accessor)
-        self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = (
-            db_accessor.get_category_assignment()
-        )
-        self.refund_maps: Dict[ID, ID] = db_accessor.get_refund_maps()
-        self.tags_map: Dict[ID, ID] = db_accessor.get_tags_map()
+        self.category_assignment = db_accessor.get_category_assignment()
+        self.refund_maps = db_accessor.get_refund_maps()
+        self.tags_map = db_accessor.get_tags_map()
 
     def category_for_transaction(
         self, transaction_id: ID
@@ -77,7 +80,8 @@ class TransactionManager(RecordManager[Transaction]):
                 x
                 for _, x in self.records().items()
                 if not isinstance(x, TransferBudgetTransaction)
-                and x.account == account_id
+                and hasattr(x, "account")
+                and cast(_AccountTransaction, x).account == account_id
                 and x.datetime <= until
             ],
             key=lambda x: x.datetime,

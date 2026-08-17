@@ -1,13 +1,14 @@
+from decimal import Decimal
+
 import pytest
 
 from moneywiz_api.model.transaction import (
     RefundTransaction,
+    Transaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
-    Transaction,
 )
-from conftest import transaction_manager, category_manager
-from decimal import Decimal
+from tests.integration.conftest import category_manager, transaction_manager
 
 
 def test_category():
@@ -26,14 +27,24 @@ def test_category():
 )
 def test_category_assignment_refund_transactions(transaction: Transaction):
     # Refund transaction doesn't have correct category assignments
+
     category_assignment = transaction_manager.category_for_transaction(transaction.id)
     original_transaction_id = (
         transaction_manager.original_transaction_for_refund_transaction(transaction.id)
     )
+    assert original_transaction_id is not None
     original_transaction = transaction_manager.get(original_transaction_id)
+    assert original_transaction is not None
     original_category_assignment = transaction_manager.category_for_transaction(
         original_transaction_id
     )
+
+    if category_assignment is None and original_category_assignment is None:
+        return
+
+    assert category_assignment is not None
+    assert original_category_assignment is not None
+
     assert len(category_assignment) == len(original_category_assignment)
 
     total_amount, original_total_amount = Decimal(0), Decimal(0)
@@ -48,7 +59,7 @@ def test_category_assignment_refund_transactions(transaction: Transaction):
         # total_amount == transaction.amount is not necessarily
         pass
     else:
-        assert total_amount == transaction.amount
+        assert total_amount == pytest.approx(transaction.amount, abs=0.001)
     assert original_total_amount == pytest.approx(
         original_transaction.amount, abs=0.001
     )

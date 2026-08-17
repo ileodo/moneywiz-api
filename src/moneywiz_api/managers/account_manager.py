@@ -1,16 +1,15 @@
-from typing import Dict, Callable, List
+from typing import Dict, List
 
-from moneywiz_api.model.account import Account
 from moneywiz_api.managers.record_manager import RecordManager
-
 from moneywiz_api.model.account import (
+    Account,
     BankChequeAccount,
     BankSavingAccount,
     CashAccount,
     CreditCardAccount,
-    LoanAccount,
-    InvestmentAccount,
     ForexAccount,
+    InvestmentAccount,
+    LoanAccount,
 )
 from moneywiz_api.types import ID
 
@@ -20,7 +19,7 @@ class AccountManager(RecordManager[Account]):
         super().__init__()
 
     @property
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[Account]]:
         return {
             "BankChequeAccount": BankChequeAccount,
             "BankSavingAccount": BankSavingAccount,

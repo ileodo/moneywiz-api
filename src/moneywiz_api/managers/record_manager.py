@@ -1,32 +1,37 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar, Callable
+from typing import Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.record import Record
-from moneywiz_api.types import ID, GID
-
+from moneywiz_api.model.schema_mapped_row import mapped_row
+from moneywiz_api.types import GID, ID
 
 T = TypeVar("T", bound=Record)
 
 
 class RecordManager(ABC, Generic[T]):
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: Dict[ID, T] = {}
         self._gid_to_id: Dict[GID, ID] = {}
 
     @property
     @abstractmethod
-    def ents(self) -> Dict[str, Callable]:
+    def ents(self) -> Dict[str, type[T]]:
         raise NotImplementedError()
 
     def load(self, db_accessor: DatabaseAccessor) -> None:
-        records = db_accessor.query_objects(self.ents.keys())
+        records = db_accessor.query_objects(list(self.ents.keys()))
 
         for record in records:
             typename = db_accessor.typename_for(record["Z_ENT"])
-            if typename in self.ents:
-                obj = self.ents[typename](record)
-                self.add(obj)
+            assert typename in self.ents, (
+                f"Unknown typename {typename} for record {record}"
+            )
+
+            model_cls = self.ents[typename]
+            obj = model_cls(mapped_row(record, model_cls))
+            obj.validate()
+            self.add(obj)
 
     def add(self, record: T) -> None:
         self._records[record.id] = record
@@ -41,7 +46,10 @@ class RecordManager(ABC, Generic[T]):
         return self._records.get(record_id)
 
     def get_by_gid(self, gid: GID) -> T | None:
-        return self._records.get(self._gid_to_id.get(gid))
+        record_id = self._gid_to_id.get(gid)
+        if record_id is None:
+            return None
+        return self._records.get(record_id)
 
     def records(self) -> Dict[ID, T]:
         return self._records
