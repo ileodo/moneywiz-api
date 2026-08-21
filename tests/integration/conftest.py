@@ -41,7 +41,6 @@ def pytest_collection_modifyitems(config, items):
     """Skip integration tests only after their initial conftest can load safely."""
     if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
         return
-
     integration_directory = Path(__file__).parent.resolve()
     skip = pytest.mark.skip(reason="integration tests require MONEYWIZ_TEST_DB_PATH")
     for item in items:
