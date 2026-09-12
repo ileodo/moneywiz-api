@@ -69,9 +69,7 @@ def schema_field(*aliases: str, converter: Converter | None = None) -> FieldSpec
     return FieldSpec(aliases=aliases, converter=converter)
 
 
-def datetime_field(
-    *aliases: str, value_if_null: datetime | None = None
-) -> FieldSpec:
+def datetime_field(*aliases: str, value_if_null: datetime | None = None) -> FieldSpec:
     def converter(raw_value: Any) -> datetime | None:
         if raw_value is None:
             return value_if_null
