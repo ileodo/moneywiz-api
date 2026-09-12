@@ -65,7 +65,7 @@ class DepositTransaction(Transaction):
         "account": schema_field("ZACCOUNT2"),
         "payee": schema_field("ZPAYEE2"),
         "original_currency": schema_field("ZORIGINALCURRENCY"),
-        "original_amount": nullable_decimal_field("ZORIGINALAMOUNT"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
         "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
     }
 
@@ -322,7 +322,7 @@ class RefundTransaction(Transaction):
         "account": schema_field("ZACCOUNT2"),
         "payee": schema_field("ZPAYEE2"),
         "original_currency": schema_field("ZORIGINALCURRENCY"),
-        "original_amount": nullable_decimal_field("ZORIGINALAMOUNT"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
         "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
     }
 
@@ -380,7 +380,7 @@ class TransferDepositTransaction(Transaction):
         "account": schema_field("ZACCOUNT2"),
         "sender_account": schema_field("ZSENDERACCOUNT"),
         "sender_transaction": schema_field("ZSENDERTRANSACTION"),
-        "original_amount": nullable_decimal_field("ZORIGINALAMOUNT"),
+        "original_amount": decimal_field("ZORIGINALAMOUNT"),
         "original_currency": schema_field("ZORIGINALCURRENCY"),
         "sender_amount": decimal_field("ZORIGINALSENDERAMOUNT"),
         "sender_currency": schema_field("ZORIGINALSENDERCURRENCY"),
@@ -426,18 +426,17 @@ class TransferDepositTransaction(Transaction):
         self.original_exchange_rate = row.get("original_exchange_rate")
 
         # Fixes
-        # Some legacy transfers store zero/NULL original metadata even though
+        # Some legacy transfers store zero original metadata even though
         # the paired amount and exchange rate are complete.
         if (
-            self.original_amount in (None, Decimal(0))
+            self.original_amount == Decimal(0)
             and self.sender_amount is not None
             and self.original_exchange_rate is not None
         ):
             self.original_amount = -self.sender_amount * self.original_exchange_rate - (
                 self.original_fee or 0
             )
-        if self.original_amount is not None:
-            self.original_amount = abs(self.original_amount)
+        self.original_amount = abs(self.original_amount)
 
     def validate(self) -> None:
         super().validate()

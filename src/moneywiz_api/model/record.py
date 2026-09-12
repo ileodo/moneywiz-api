@@ -3,23 +3,19 @@ from datetime import datetime
 from typing import Any, Dict
 
 from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
-from moneywiz_api.model.schema_mapped_row import mapped_row
+from moneywiz_api.model.schema_mapped_row import datetime_field, mapped_row
 from moneywiz_api.model.schema_mapped_row import schema_field as schema_field
 from moneywiz_api.types import ENT_ID, ID
 from moneywiz_api.utils import get_datetime
-
-
-def _creation_datetime(raw_value: Any) -> datetime:
-    if raw_value is None:
-        return get_datetime(0.0)
-    return RDH.get_datetime(raw_value)
 
 
 @dataclass
 class Record:
     FIELDS = {
         "ent": schema_field("Z_ENT"),
-        "created_at": schema_field("ZOBJECTCREATIONDATE", converter=_creation_datetime),
+        "created_at": datetime_field(
+            "ZOBJECTCREATIONDATE", value_if_null=get_datetime(0.0)
+        ),
         "gid": schema_field("ZGID"),
         "id": schema_field("Z_PK"),
     }
