@@ -31,9 +31,9 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
             ZSENDERACCOUNT=11,
             ZSENDERTRANSACTION=2,
             ZORIGINALAMOUNT=0.0,
-            ZORIGINALCURRENCY=None,
+            ZORIGINALCURRENCY="USD",
             ZORIGINALSENDERAMOUNT=-40.0,
-            ZORIGINALSENDERCURRENCY=None,
+            ZORIGINALSENDERCURRENCY="USD",
             ZORIGINALFEE=0.0,
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
@@ -41,8 +41,8 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
     )
 
     assert transaction.original_amount == Decimal("40.0")
-    assert transaction.original_currency is None
-    assert transaction.sender_currency is None
+    assert transaction.original_currency == "USD"
+    assert transaction.sender_currency == "USD"
 
 
 def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
@@ -53,9 +53,9 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
             ZRECIPIENTACCOUNT1=10,
             ZRECIPIENTTRANSACTION=2,
             ZORIGINALAMOUNT=-40.0,
-            ZORIGINALCURRENCY=None,
+            ZORIGINALCURRENCY="USD",
             ZORIGINALRECIPIENTAMOUNT=0.0,
-            ZORIGINALRECIPIENTCURRENCY=None,
+            ZORIGINALRECIPIENTCURRENCY="USD",
             ZORIGINALFEE=0.0,
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
@@ -63,8 +63,8 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
     )
 
     assert transaction.recipient_amount == Decimal("40.0")
-    assert transaction.original_currency is None
-    assert transaction.recipient_currency is None
+    assert transaction.original_currency == "USD"
+    assert transaction.recipient_currency == "USD"
 
 
 def test_withdraw_ignores_stale_rate_when_amounts_are_identical():

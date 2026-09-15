@@ -396,10 +396,10 @@ class TransferDepositTransaction(Transaction):
     sender_transaction: ID
 
     original_amount: Decimal  # ATTENTION: sign got fixed
-    original_currency: Optional[str]
+    original_currency: str
 
     sender_amount: Decimal
-    sender_currency: Optional[str]
+    sender_currency: str
 
     original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
@@ -449,9 +449,8 @@ class TransferDepositTransaction(Transaction):
         assert self.original_amount > 0
         assert self.sender_amount is not None
         assert self.sender_amount <= 0
-        assert self.original_currency is None or self.original_currency
-        assert self.sender_currency is None or self.sender_currency
-        assert (self.original_currency is None) == (self.sender_currency is None)
+        assert self.original_currency is not None
+        assert self.sender_currency is not None
 
         if self.original_fee is not None and self.original_fee != 0:
             assert self.original_fee_currency is not None
@@ -488,10 +487,10 @@ class TransferWithdrawTransaction(Transaction):
     recipient_transaction: ID
 
     original_amount: Decimal  # always neg
-    original_currency: Optional[str]
+    original_currency: str
 
     recipient_amount: Decimal  # ATTENTION: sign got fixed
-    recipient_currency: Optional[str]
+    recipient_currency: str
 
     original_fee: Optional[Decimal]
     original_fee_currency: Optional[str]
@@ -538,9 +537,8 @@ class TransferWithdrawTransaction(Transaction):
         assert self.original_amount < 0
         assert self.recipient_amount is not None
         assert self.recipient_amount > 0
-        assert self.original_currency is None or self.original_currency
-        assert self.recipient_currency is None or self.recipient_currency
-        assert (self.original_currency is None) == (self.recipient_currency is None)
+        assert self.original_currency is not None
+        assert self.recipient_currency is not None
 
         if self.original_fee is not None and self.original_fee != 0:
             assert self.original_fee_currency is not None

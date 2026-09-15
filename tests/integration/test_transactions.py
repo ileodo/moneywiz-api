@@ -125,12 +125,9 @@ def test_all_transfer_deposit_transaction(
         transfer_deposit_transaction.sender_transaction
     )
     assert isinstance(withdraw_transaction, TransferWithdrawTransaction)
-    if transfer_deposit_transaction.original_currency is not None and not isinstance(
-        to_account, ForexAccount
-    ):
+    if not isinstance(to_account, ForexAccount):
         assert transfer_deposit_transaction.original_currency == to_account.currency
-    if transfer_deposit_transaction.sender_currency is not None:
-        assert transfer_deposit_transaction.sender_currency == from_account.currency
+    assert transfer_deposit_transaction.sender_currency == from_account.currency
     assert transfer_deposit_transaction.sender_amount == pytest.approx(
         withdraw_transaction.amount, abs=0.001
     )
@@ -163,13 +160,9 @@ def test_all_transfer_withdraw_transaction(
     )
     assert isinstance(deposit_transaction, TransferDepositTransaction)
 
-    if transfer_withdraw_transaction.original_currency is not None:
-        assert transfer_withdraw_transaction.original_currency == from_account.currency
+    assert transfer_withdraw_transaction.original_currency == from_account.currency
     if not isinstance(to_account, ForexAccount):
-        if transfer_withdraw_transaction.recipient_currency is not None:
-            assert (
-                transfer_withdraw_transaction.recipient_currency == to_account.currency
-            )
+        assert transfer_withdraw_transaction.recipient_currency == to_account.currency
         assert abs(transfer_withdraw_transaction.recipient_amount) == pytest.approx(
             deposit_transaction.amount, abs=0.001
         )
