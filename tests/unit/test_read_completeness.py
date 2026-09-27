@@ -118,12 +118,16 @@ def test_report_mappings_cannot_change_completeness_after_publication() -> None:
     managers.clear()
     assert not report.complete
     assert not completeness.complete
+    mutable_relationships = cast(
+        dict[str, RelationshipLoadReport], report.relationships
+    )
+    mutable_managers = cast(dict[str, ManagerLoadReport], completeness.managers)
     with pytest.raises(TypeError):
-        report.relationships["transaction_tags"] = RelationshipLoadReport(
+        mutable_relationships["transaction_tags"] = RelationshipLoadReport(
             RelationshipStorage.ABSENT
         )
     with pytest.raises(TypeError):
-        completeness.managers["transactions"] = ManagerLoadReport()
+        mutable_managers["transactions"] = ManagerLoadReport()
 
 
 def test_missing_field_is_reported() -> None:

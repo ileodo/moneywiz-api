@@ -103,7 +103,9 @@ def test_metadata_remap_refuses_and_invalidates_loaded_manager(tmp_path) -> None
         assert not api.accessor._con.in_transaction
 
     with closing(MoneywizApi(path, managers=("accounts",))) as reopened:
-        assert reopened.account_manager.get(1).name == "After"
+        account = reopened.account_manager.get(1)
+        assert account is not None
+        assert account.name == "After"
         assert reopened.completeness().managers["accounts"].complete
 
 
@@ -163,8 +165,12 @@ def test_normal_data_and_zmax_growth_reload_successfully(tmp_path) -> None:
         assert api.account_manager is manager
         assert report.complete
         assert report.source_ids == (1, 2)
-        assert manager.get(1).name == "Edited"
-        assert manager.get(2).name == "Added"
+        edited = manager.get(1)
+        added = manager.get(2)
+        assert edited is not None
+        assert added is not None
+        assert edited.name == "Edited"
+        assert added.name == "Added"
 
 
 def test_initialization_race_binds_one_old_snapshot_then_refuses(tmp_path, monkeypatch):
@@ -242,7 +248,9 @@ def test_reload_race_reads_old_snapshot_then_next_load_refuses(
         assert migration_committed
         assert report.complete
         assert report.source_ids == (1,)
-        assert api.account_manager.get(1).name == "Before"
+        account = api.account_manager.get(1)
+        assert account is not None
+        assert account.name == "Before"
         with pytest.raises(DatabaseSchemaError, match=f"^{SCHEMA_CHANGED}$"):
             api.load(("accounts",))
         assert api.account_manager.records() == {}

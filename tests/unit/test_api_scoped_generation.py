@@ -75,8 +75,10 @@ def test_scoped_reload_refreshes_loaded_union_atomically(
     create_read_schema(path)
 
     with closing(MoneywizApi(path, managers=initial_managers)) as api:
-        assert api.account_manager.get(1).name == "Before"
-        assert api.account_manager.get(1).info is None
+        account = api.account_manager.get(1)
+        assert account is not None
+        assert account.name == "Before"
+        assert account.info is None
         assert api.account_manager.load_report.complete
         mutate_between_loads(path)
 
@@ -85,8 +87,12 @@ def test_scoped_reload_refreshes_loaded_union_atomically(
         assert tuple(completeness.managers) == (
             expected_managers or tuple(api._managers)
         )
-        assert api.account_manager.get(1).name == "After"
-        assert api.transaction_manager.get(2).description == "Income"
+        account = api.account_manager.get(1)
+        transaction = api.transaction_manager.get(2)
+        assert account is not None
+        assert transaction is not None
+        assert account.name == "After"
+        assert transaction.description == "Income"
 
 
 def test_failed_scoped_reload_invalidates_loaded_managers(
