@@ -208,7 +208,7 @@ def test_initialization_race_binds_one_old_snapshot_then_refuses(tmp_path, monke
     assert migration_committed
     assert accessor.schema_profile.profile_id == "unsuffixed-investment-columns"
     assert accessor.ent_for("InvestmentHolding") == 24
-    assert (24, "InvestmentHolding", 8) in accessor._schema_identity[1]
+    assert (24, "InvestmentHolding") in accessor._schema_identity[1]
     assert (25, "InvestmentHolding", 8) not in accessor._schema_identity[1]
     with accessor._raw_read_transaction():
         assert accessor._read_schema_identity() != accessor._schema_identity

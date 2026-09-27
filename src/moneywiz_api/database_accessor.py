@@ -58,7 +58,7 @@ class DatabaseAccessor:
                 raise DatabaseSchemaError(
                     "database is missing required MoneyWiz schema tables"
                 )
-            required_metadata_columns = {"Z_ENT", "Z_NAME", "Z_SUPER"}
+            required_metadata_columns = {"Z_ENT", "Z_NAME"}
             if not required_metadata_columns.issubset(
                 self._table_columns("Z_PRIMARYKEY")
             ):
@@ -71,31 +71,28 @@ class DatabaseAccessor:
         self._schema_identity = schema_identity
         self._schema_profile = schema_profile
         metadata = schema_identity[1]
-        self._ent_to_typename = {ent_id: name for ent_id, name, _ in metadata}
-        self._ent_to_super = {ent_id: super_id for ent_id, _, super_id in metadata}
-        self._typename_to_ent = {name: ent_id for ent_id, name, _ in metadata}
+        self._ent_to_typename = {ent_id: name for ent_id, name in metadata}
+        self._typename_to_ent = {name: ent_id for ent_id, name in metadata}
 
-    def _read_entity_metadata(self) -> tuple[tuple[int, str, int], ...]:
+    def _read_entity_metadata(self) -> tuple[tuple[int, str], ...]:
         cur = self._con.cursor()
         res = cur.execute(
             """
-        SELECT Z_ENT, Z_NAME, Z_SUPER
+        SELECT Z_ENT, Z_NAME
         FROM "Z_PRIMARYKEY"
         ORDER BY Z_ENT
         """
         )
-        rows: list[tuple[int, str, int]] = []
+        rows: list[tuple[int, str]] = []
         ent_ids: set[int] = set()
         typenames: set[str] = set()
         for row in res.fetchall():
             ent_id = row["Z_ENT"]
             typename = row["Z_NAME"]
-            super_id = row["Z_SUPER"]
             if (
                 not isinstance(ent_id, int)
                 or not isinstance(typename, str)
                 or not typename
-                or not isinstance(super_id, int)
             ):
                 raise DatabaseSchemaError("Z_PRIMARYKEY contains invalid metadata")
             if ent_id in ent_ids:
@@ -106,12 +103,12 @@ class DatabaseAccessor:
                 )
             ent_ids.add(ent_id)
             typenames.add(typename)
-            rows.append((ent_id, typename, super_id))
+            rows.append((ent_id, typename))
         return tuple(rows)
 
     def _read_schema_identity(
         self,
-    ) -> tuple[int, tuple[tuple[int, str, int], ...]]:
+    ) -> tuple[int, tuple[tuple[int, str], ...]]:
         schema_version = self._con.execute("PRAGMA schema_version").fetchone()[
             "schema_version"
         ]
@@ -136,25 +133,6 @@ class DatabaseAccessor:
         ent_id = self._typename_to_ent.get(typename)
         assert ent_id is not None, f"Unknown typename {typename}"
         return ent_id
-
-    def descendant_typenames(self, roots: tuple[str, ...]) -> list[str]:
-        """Return physical entity names descended from the requested roots."""
-        root_ids = {
-            ent_id
-            for root in roots
-            if (ent_id := self._typename_to_ent.get(root)) is not None
-        }
-        descendants: list[str] = []
-        for ent_id, typename in self._ent_to_typename.items():
-            current = ent_id
-            visited: set[int] = set()
-            while current and current not in visited:
-                if current in root_ids:
-                    descendants.append(typename)
-                    break
-                visited.add(current)
-                current = self._ent_to_super.get(current, 0)
-        return descendants
 
     def _table_exists(self, table_name: str) -> bool:
         row = self._con.execute(
@@ -199,6 +177,7 @@ class DatabaseAccessor:
         )
         tag_column = f"Z_{tag_ent}TAGS" if tag_ent is not None else None
         candidates: list[tuple[str, set[str]]] = []
+        # Core Data can create several *_TAGS tables; select only the Transaction–Tag link.
         for row in self._con.execute(
             "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
         ):
@@ -311,27 +290,6 @@ class DatabaseAccessor:
                 "database schema changed; close and reopen the accessor"
             )
 
-    def _verify_source_eligibility(self) -> None:
-        """Reject rows whose entity ancestry cannot be classified safely."""
-        rows = self._con.execute(
-            "SELECT DISTINCT Z_ENT FROM ZSYNCOBJECT ORDER BY Z_ENT"
-        ).fetchall()
-
-        for row in rows:
-            current = row["Z_ENT"]
-            if not isinstance(current, int) or current not in self._ent_to_super:
-                raise DatabaseSchemaError(
-                    "database contains rows with unclassifiable entity ancestry"
-                )
-            visited: set[int] = set()
-            while current != 0:
-                if current in visited or current not in self._ent_to_super:
-                    raise DatabaseSchemaError(
-                        "database contains rows with unclassifiable entity ancestry"
-                    )
-                visited.add(current)
-                current = self._ent_to_super[current]
-
     @contextmanager
     def read_transaction(self):
         """Keep cache-dependent reads on one verified SQLite snapshot."""
@@ -340,8 +298,8 @@ class DatabaseAccessor:
 
         with self._raw_read_transaction():
             if not self._admission_depth:
+                # Cached entity IDs and column profiles must still match the live schema.
                 self._verify_schema_identity()
-                self._verify_source_eligibility()
                 self._require_active_read()
             self._admission_depth += 1
             try:

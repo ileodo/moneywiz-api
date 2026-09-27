@@ -26,8 +26,6 @@ class DuplicateRecordGidError(ValueError):
 
 
 class RecordManager(ABC, Generic[T]):
-    entity_roots: tuple[str, ...] = ()
-
     def __init__(self) -> None:
         self._records: Dict[ID, T] = {}
         self._gid_to_id: Dict[GID, ID] = {}
@@ -52,9 +50,8 @@ class RecordManager(ABC, Generic[T]):
     def _load_in_transaction(self, db_accessor: DatabaseAccessor) -> ManagerLoadReport:
         """Load all manager state inside the caller-owned read snapshot."""
         ents = self.ents
-        discovered = db_accessor.descendant_typenames((*self.entity_roots, *ents))
-        typenames = list(dict.fromkeys((*ents, *discovered)))
-        records = db_accessor.query_objects(typenames)
+        # Completeness is scoped to this manager's explicitly supported entities.
+        records = db_accessor.query_objects(list(ents))
 
         source_ids: list[ID | None] = []
         parsed_ids: list[ID] = []
@@ -67,8 +64,6 @@ class RecordManager(ABC, Generic[T]):
             typename = None
             try:
                 typename = db_accessor.typename_for(record["Z_ENT"])
-                if typename not in ents:
-                    raise UnknownEntityError()
                 obj = self.construct_record(ents[typename], record, db_accessor)
                 obj.validate()
                 if obj.id in self._records:
@@ -111,8 +106,6 @@ class RecordManager(ABC, Generic[T]):
 
     @staticmethod
     def _error_kind(exc: Exception) -> LoadErrorKind:
-        if isinstance(exc, UnknownEntityError):
-            return LoadErrorKind.UNKNOWN_ENTITY
         if isinstance(exc, DuplicateRecordIdError):
             return LoadErrorKind.DUPLICATE_ID
         if isinstance(exc, DuplicateRecordGidError):
@@ -171,7 +164,3 @@ class RecordManager(ABC, Generic[T]):
 
     def __repr__(self):
         return "\n".join(f"{key}: {value}" for key, value in self.records().items())
-
-
-class UnknownEntityError(ValueError):
-    """Raised when a source row belongs to an unsupported subtype."""

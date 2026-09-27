@@ -189,9 +189,6 @@ class ManagerAccessor(ProfileAccessor):
     def read_transaction(self):
         yield
 
-    def descendant_typenames(self, _roots):
-        return [self.typename]
-
     def read_category_assignments(self):
         return {}, RelationshipLoadReport(storage=RelationshipStorage.ABSENT)
 

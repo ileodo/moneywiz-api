@@ -44,17 +44,18 @@ class RecordAccessor:
     def read_transaction(self):
         yield
 
-    def descendant_typenames(self, _roots):
-        return list(self.typenames.values())
-
-    def query_objects(self, _typenames):
-        return self.rows
+    def query_objects(self, typenames):
+        return [
+            row
+            for row in self.rows
+            if "Z_ENT" not in row or self.typenames.get(row["Z_ENT"]) in typenames
+        ]
 
     def typename_for(self, ent_id):
         return self.typenames.get(ent_id)
 
 
-def test_report_counts_duplicate_and_unknown_rows_without_partial_mutation() -> None:
+def test_report_counts_duplicate_rows_without_partial_mutation() -> None:
     manager = ExampleManager()
     rows = [
         record_row(),
@@ -70,12 +71,11 @@ def test_report_counts_duplicate_and_unknown_rows_without_partial_mutation() -> 
         )
     )
 
-    assert report.source_ids == (1, 1, 2, 3)
+    assert report.source_ids == (1, 1, 2)
     assert report.parsed_ids == (1,)
     assert [item.error for item in report.skipped] == [
         LoadErrorKind.DUPLICATE_ID,
         LoadErrorKind.DUPLICATE_GID,
-        LoadErrorKind.UNKNOWN_ENTITY,
     ]
     assert report.observed
     assert report.status == "partial"

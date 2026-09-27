@@ -73,9 +73,6 @@ class TransferWithdrawAccessor:
     def read_transaction(self):
         yield
 
-    def descendant_typenames(self, _roots):
-        return []
-
     def query_objects(self, _typenames):
         return self.rows
 

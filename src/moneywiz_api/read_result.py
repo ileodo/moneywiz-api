@@ -16,7 +16,6 @@ class LoadErrorKind(str, Enum):
     VALIDATION = "validation"
     DUPLICATE_ID = "duplicate_id"
     DUPLICATE_GID = "duplicate_gid"
-    UNKNOWN_ENTITY = "unknown_entity"
 
 
 class RelationshipStorage(str, Enum):

@@ -45,16 +45,11 @@ def test_accessor_rejects_non_moneywiz_sqlite(tmp_path) -> None:
         DatabaseAccessor(path)
 
 
-def test_accessor_is_read_only_and_discovers_true_descendants(tmp_path) -> None:
+def test_accessor_is_read_only(tmp_path) -> None:
     path = tmp_path / "moneywiz.sqlite"
     create_schema(path)
 
     with closing(DatabaseAccessor(path)) as accessor:
-        assert accessor.descendant_typenames(("Account",)) == [
-            "Account",
-            "CashAccount",
-            "FutureAccount",
-        ]
         with pytest.raises(sqlite3.OperationalError, match="readonly"):
             accessor._con.execute("CREATE TABLE mutation (id INTEGER)")
 
@@ -74,20 +69,12 @@ def test_get_record_preserves_callable_constructors(tmp_path) -> None:
         assert accessor.get_record_by_gid("record-gid", get_gid) == "record-gid"
 
 
-@pytest.mark.parametrize("super_definition", ["", ", Z_SUPER INTEGER"])
-def test_invalid_entity_metadata_is_rejected(tmp_path, super_definition) -> None:
+@pytest.mark.parametrize("columns", ["Z_NAME TEXT", "Z_ENT INTEGER"])
+def test_incomplete_entity_metadata_is_rejected(tmp_path, columns) -> None:
     path = tmp_path / "malformed.sqlite"
     with closing(sqlite3.connect(path)) as connection:
-        connection.execute(
-            "CREATE TABLE Z_PRIMARYKEY "
-            f"(Z_ENT INTEGER PRIMARY KEY, Z_NAME TEXT{super_definition})"
-        )
+        connection.execute(f"CREATE TABLE Z_PRIMARYKEY ({columns})")
         connection.execute("CREATE TABLE ZSYNCOBJECT (Z_PK INTEGER, Z_ENT INTEGER)")
-        if super_definition:
-            connection.execute(
-                "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME, Z_SUPER) "
-                "VALUES (8, 'SyncObject', NULL)"
-            )
         connection.commit()
 
     with pytest.raises(DatabaseSchemaError):

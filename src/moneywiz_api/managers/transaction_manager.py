@@ -28,8 +28,6 @@ class _AccountTransaction(Protocol):
 
 
 class TransactionManager(RecordManager[Transaction]):
-    entity_roots = ("Transaction",)
-
     def __init__(self) -> None:
         super().__init__()
         self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = {}
