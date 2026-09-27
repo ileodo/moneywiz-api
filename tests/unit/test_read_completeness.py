@@ -7,7 +7,13 @@ import pytest
 
 from moneywiz_api.managers.record_manager import RecordManager
 from moneywiz_api.model.record import Record
-from moneywiz_api.read_result import LoadErrorKind
+from moneywiz_api.read_result import (
+    ApiCompleteness,
+    LoadErrorKind,
+    ManagerLoadReport,
+    RelationshipLoadReport,
+    RelationshipStorage,
+)
 
 
 class ExampleRecord(Record):
@@ -76,10 +82,13 @@ def test_report_counts_duplicate_and_unknown_rows_without_partial_mutation() -> 
     assert list(manager.records()) == [1]
 
 
-def test_construction_error_is_bounded_without_raw_value(caplog) -> None:
+@pytest.mark.parametrize("exception_type", [ValueError, RuntimeError])
+def test_construction_error_is_bounded_without_raw_value(
+    caplog, exception_type
+) -> None:
     class BrokenRecord(Record):
         def __init__(self, _row):
-            raise ValueError("PRIVATE_PAYLOAD")
+            raise exception_type("PRIVATE_PAYLOAD")
 
     class BrokenManager(RecordManager):
         @property
@@ -92,9 +101,29 @@ def test_construction_error_is_bounded_without_raw_value(caplog) -> None:
     )
 
     assert report.skipped[0].error == LoadErrorKind.INVALID_VALUE
-    assert report.skipped[0].exception_type == "ValueError"
+    assert report.skipped[0].exception_type == exception_type.__name__
     assert "PRIVATE_PAYLOAD" not in json.dumps(report.as_dict())
     assert "PRIVATE_PAYLOAD" not in caplog.text
+
+
+def test_report_mappings_cannot_change_completeness_after_publication() -> None:
+    relationships = {
+        "transaction_tags": RelationshipLoadReport(RelationshipStorage.UNKNOWN)
+    }
+    report = ManagerLoadReport(relationships=relationships)
+    managers = {"transactions": report}
+    completeness = ApiCompleteness(managers)
+
+    relationships.clear()
+    managers.clear()
+    assert not report.complete
+    assert not completeness.complete
+    with pytest.raises(TypeError):
+        report.relationships["transaction_tags"] = RelationshipLoadReport(
+            RelationshipStorage.ABSENT
+        )
+    with pytest.raises(TypeError):
+        completeness.managers["transactions"] = ManagerLoadReport()
 
 
 def test_missing_field_is_reported() -> None:

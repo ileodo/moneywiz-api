@@ -78,7 +78,7 @@ class RecordManager(ABC, Generic[T]):
                 self.add(obj)
             except UnsupportedInvestmentSchemaError:
                 raise
-            except (AssertionError, KeyError, ValueError) as exc:
+            except (AssertionError, KeyError, ValueError, RuntimeError) as exc:
                 error = self._error_kind(exc)
                 skipped.append(
                     SkippedRecord(

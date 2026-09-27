@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
+from types import MappingProxyType
 from typing import Any, Mapping
 
 from moneywiz_api.types import ID
@@ -93,6 +94,11 @@ class ManagerLoadReport:
     relationships: Mapping[str, RelationshipLoadReport] = field(default_factory=dict)
     observed: bool = True
 
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "relationships", MappingProxyType(dict(self.relationships))
+        )
+
     @classmethod
     def unloaded(cls) -> "ManagerLoadReport":
         """Return evidence that no complete manager observation was published."""
@@ -147,6 +153,9 @@ class ApiCompleteness:
     """Aggregate completeness for the managers included in a read."""
 
     managers: Mapping[str, ManagerLoadReport]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "managers", MappingProxyType(dict(self.managers)))
 
     @property
     def complete(self) -> bool:
