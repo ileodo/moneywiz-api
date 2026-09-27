@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from decimal import Decimal
 from typing import Any, cast
 
@@ -67,6 +68,13 @@ class TransferWithdrawManager(RecordManager):
 class TransferWithdrawAccessor:
     def __init__(self, rows):
         self.rows = rows
+
+    @contextmanager
+    def read_transaction(self):
+        yield
+
+    def descendant_typenames(self, _roots):
+        return []
 
     def query_objects(self, _typenames):
         return self.rows

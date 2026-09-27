@@ -12,6 +12,7 @@ A Python API to access MoneyWiz Sqlite database.
 - [Get Started](#get-started)
 - [Tests](#tests)
 - [Contribution](#contribution)
+- [Read completeness](#read-completeness)
 
 ## Get Started
 
@@ -64,3 +65,26 @@ MONEYWIZ_TEST_DB_PATH=/absolute/path/to/test.sqlite uv run pytest tests
 ## Contribution
 
 This project is in very early stage, all contributions are welcomed!
+
+## Read completeness
+
+```python
+from contextlib import closing
+from pathlib import Path
+
+from moneywiz_api import MoneywizApi
+
+with closing(MoneywizApi(Path("moneywiz.sqlite"), managers=("accounts",))) as api:
+    report = api.completeness()
+    if not report.complete:
+        raise RuntimeError("incomplete read")
+    accounts = api.account_manager.records()
+```
+
+By default, all managers load. Select from `accounts`, `payees`, `categories`,
+`transactions`, `investment_holdings`, and `tags`. `load(managers=...)` refreshes
+the selection and previously loaded managers in one read transaction. A failed
+reload invalidates those managers. Reports contain source and parsed IDs,
+identity-only skipped row diagnostics, and transaction relationship status.
+Unknown layouts prevent a complete result. Reopen the read-only API after a
+schema change.
