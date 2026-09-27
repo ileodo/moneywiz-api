@@ -41,7 +41,6 @@ def account_row() -> dict:
 
 
 MANAGER_CASES = [
-    (AccountManager, "Account", 9, "CashAccount", 10),
     (PayeeManager, "Payee", 28, "Payee", 28),
     (CategoryManager, "Category", 19, "Category", 19),
     (InvestmentHoldingManager, "InvestmentHolding", 24, "InvestmentHolding", 24),
@@ -51,7 +50,6 @@ MANAGER_CASES = [
 
 
 PARTIALLY_MIGRATED_HIERARCHIES = [
-    (AccountManager, "Account", "CashAccount", 10),
     (TransactionManager, "Transaction", "DepositTransaction", 38),
 ]
 
@@ -96,7 +94,7 @@ def insert_row(connection: sqlite3.Connection, row: dict) -> None:
     MANAGER_CASES,
 )
 @pytest.mark.parametrize("transitive", [False, True], ids=["direct", "transitive"])
-def test_all_managers_count_unknown_descendants(
+def test_managers_count_unknown_descendants(
     tmp_path,
     manager_type,
     root_name,

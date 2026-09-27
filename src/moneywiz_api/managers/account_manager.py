@@ -15,8 +15,6 @@ from moneywiz_api.types import ID
 
 
 class AccountManager(RecordManager[Account]):
-    entity_roots = ("Account",)
-
     def __init__(self):
         super().__init__()
 
