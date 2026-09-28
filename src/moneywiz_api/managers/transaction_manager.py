@@ -1,4 +1,5 @@
 from datetime import datetime
+from dataclasses import replace
 from decimal import Decimal
 from typing import Dict, List, Tuple, Protocol, cast
 
@@ -17,6 +18,7 @@ from moneywiz_api.model.transaction import (
     TransferWithdrawTransaction,
     WithdrawTransaction,
 )
+from moneywiz_api.read_result import ManagerLoadReport
 from moneywiz_api.types import ID
 
 
@@ -47,11 +49,29 @@ class TransactionManager(RecordManager[Transaction]):
             "WithdrawTransaction": WithdrawTransaction,
         }
 
-    def load(self, db_accessor: DatabaseAccessor) -> None:
-        super().load(db_accessor)
-        self.category_assignment = db_accessor.get_category_assignment()
-        self.refund_maps = db_accessor.get_refund_maps()
-        self.tags_map = db_accessor.get_tags_map()
+    def _load_in_transaction(self, db_accessor: DatabaseAccessor) -> ManagerLoadReport:
+        report = super()._load_in_transaction(db_accessor)
+        category_assignment, category_report = db_accessor.read_category_assignments()
+        refund_maps, refund_report = db_accessor.read_refund_maps()
+        tags_map, tags_report = db_accessor.read_tags_map()
+        self.category_assignment = category_assignment
+        self.refund_maps = refund_maps
+        self.tags_map = tags_map
+        return replace(
+            report,
+            relationships={
+                "category_assignments": category_report,
+                "refund_links": refund_report,
+                "transaction_tags": tags_report,
+            },
+        )
+
+    def _discard_incomplete_load(self) -> None:
+        """Clear records and relationships after an incomplete load."""
+        super()._discard_incomplete_load()
+        self.category_assignment = {}
+        self.refund_maps = {}
+        self.tags_map = {}
 
     def category_for_transaction(
         self, transaction_id: ID

@@ -43,10 +43,10 @@ class Record:
 
     def validate(self) -> None:
         assert self._raw
-        assert self._ent
+        assert type(self._ent) is int and bool(self._ent)
         assert self._created_at is not None
-        assert self.gid
-        assert self.id
+        assert type(self.gid) is str and bool(self.gid)
+        assert type(self.id) is int and bool(self.id)
 
     def filtered(self) -> Dict[str, Any]:
         """

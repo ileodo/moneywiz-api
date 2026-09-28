@@ -47,6 +47,7 @@ class Account(Record, ABC):
     def validate(self) -> None:
         super().validate()
         assert self.display_order is not None, self.as_dict()
+        assert isinstance(self.display_order, (int, float))
         assert self.group_id is not None, self.as_dict()
         assert self.name is not None, self.as_dict()
         assert self.currency is not None, self.as_dict()

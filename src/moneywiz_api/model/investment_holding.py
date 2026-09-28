@@ -8,9 +8,7 @@ from moneywiz_api.model.schema_mapped_row import (
     is_one_field,
     mapped_row,
     nullable_decimal_field,
-)
-from moneywiz_api.model.schema_mapped_row import (
-    schema_field as schema_field,
+    schema_field,
 )
 from moneywiz_api.types import ID
 
@@ -20,7 +18,9 @@ class InvestmentHolding(Record):
     FIELDS = {
         "account": schema_field("ZINVESTMENTACCOUNT"),
         "opening_number_of_shares": nullable_decimal_field("ZOPENNINGNUMBEROFSHARES"),
-        "number_of_shares": nullable_decimal_field("ZNUMBEROFSHARES"),
+        "number_of_shares": nullable_decimal_field(
+            "ZNUMBEROFSHARES", profile_column="holding_number_of_shares_column"
+        ),
         "symbol": schema_field("ZSYMBOL"),
         "holding_type": schema_field("ZHOLDINGTYPE"),
         "description": schema_field("ZDESC"),
@@ -78,7 +78,8 @@ class InvestmentHolding(Record):
         )
 
         # Fixes
-        self.number_of_shares = self.number_of_shares or Decimal(0)
+        if self.number_of_shares is None:
+            self.number_of_shares = Decimal(0)
 
     def validate(self) -> None:
         super().validate()

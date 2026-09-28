@@ -35,7 +35,7 @@ class Transaction(Record, ABC):
     reconciled: bool
 
     amount: Decimal
-    description: str
+    description: Optional[str]
     datetime: datetime
     notes: Optional[str]
 
@@ -52,9 +52,11 @@ class Transaction(Record, ABC):
 
     def validate(self) -> None:
         super().validate()
-        assert self.reconciled is not None, self.as_dict()
+        assert type(self.reconciled) is bool
+        if hasattr(self, "account") and self.account is not None:
+            assert type(self.account) is int
         assert self.amount is not None, self.as_dict()
-        assert self.description is not None, self.as_dict()
+        assert self.description is None or type(self.description) is str
         assert self.datetime is not None, self.as_dict()
         # self.notes can be None
 
@@ -183,8 +185,12 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         "account": schema_field("ZACCOUNT2"),
         "fee": decimal_field("ZFEE2"),
         "investment_holding": schema_field("ZINVESTMENTHOLDING"),
-        "number_of_shares": decimal_field("ZNUMBEROFSHARES"),
-        "price_per_share": decimal_field("ZPRICEPERSHARE1"),
+        "number_of_shares": decimal_field(
+            "ZNUMBEROFSHARES", profile_column="transaction_number_of_shares_column"
+        ),
+        "price_per_share": decimal_field(
+            "ZPRICEPERSHARE1", profile_column="price_per_share_column"
+        ),
     }
 
     account: ID
@@ -209,7 +215,8 @@ class InvestmentBuyTransaction(InvestmentTransaction):
         self.price_per_share = row.get("price_per_share")
 
         # Fixes
-        self.fee = max(self.fee, 0)
+        if self.fee < 0:
+            self.fee = Decimal(0)
 
     def validate(self) -> None:
         super().validate()
@@ -237,8 +244,12 @@ class InvestmentSellTransaction(InvestmentTransaction):
         "account": schema_field("ZACCOUNT2"),
         "fee": decimal_field("ZFEE2"),
         "investment_holding": schema_field("ZINVESTMENTHOLDING"),
-        "number_of_shares": decimal_field("ZNUMBEROFSHARES"),
-        "price_per_share": decimal_field("ZPRICEPERSHARE1"),
+        "number_of_shares": decimal_field(
+            "ZNUMBEROFSHARES", profile_column="transaction_number_of_shares_column"
+        ),
+        "price_per_share": decimal_field(
+            "ZPRICEPERSHARE1", profile_column="price_per_share_column"
+        ),
     }
 
     account: ID
@@ -263,7 +274,8 @@ class InvestmentSellTransaction(InvestmentTransaction):
         self.price_per_share = row.get("price_per_share")
 
         # Fixes
-        self.fee = max(self.fee, 0)
+        if self.fee < 0:
+            self.fee = Decimal(0)
 
     def validate(self) -> None:
         super().validate()
@@ -525,6 +537,15 @@ class TransferWithdrawTransaction(Transaction):
             self.recipient_amount = -self.original_amount * self.original_exchange_rate
         if self.recipient_amount is not None:
             self.recipient_amount = abs(self.recipient_amount)
+        if self.original_amount == 0 and self.recipient_amount not in (
+            None,
+            Decimal(0),
+        ):
+            if self.original_exchange_rate == 0:
+                raise ValueError(
+                    "cannot reconstruct a transfer amount with a zero exchange rate"
+                )
+            self.original_amount = self.amount
 
     def validate(self) -> None:
         super().validate()
