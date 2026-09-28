@@ -35,6 +35,21 @@ def record_row(record_id=1, gid="record-1", ent=1):
     }
 
 
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("ZGID", b"binary-id"),
+        ("Z_PK", "1"),
+        ("Z_ENT", True),
+    ],
+)
+def test_record_validation_rejects_coerced_identity(field, value) -> None:
+    row = record_row()
+    row[field] = value
+    with pytest.raises(AssertionError):
+        ExampleRecord(row).validate()
+
+
 class RecordAccessor:
     def __init__(self, rows, typenames=None):
         self.rows = rows

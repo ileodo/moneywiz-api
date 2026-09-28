@@ -34,6 +34,30 @@ def transfer_withdraw_row(**overrides):
     return row
 
 
+@pytest.mark.parametrize("reconciled", [None, 2, "1", True])
+def test_transaction_validation_rejects_nonbinary_reconciled(reconciled) -> None:
+    with pytest.raises(RuntimeError, match="Failed to convert field reconciled"):
+        TransferWithdrawTransaction(
+            transfer_withdraw_row(ZORIGINALEXCHANGERATE=1.0, ZRECONCILED=reconciled)
+        )
+
+
+def test_transaction_validation_preserves_nullable_description() -> None:
+    transaction = TransferWithdrawTransaction(
+        transfer_withdraw_row(ZORIGINALEXCHANGERATE=1.0, ZDESC2=None)
+    )
+    transaction.validate()
+    assert transaction.description is None
+
+
+def test_transaction_validation_rejects_binary_description() -> None:
+    transaction = TransferWithdrawTransaction(
+        transfer_withdraw_row(ZORIGINALEXCHANGERATE=1.0, ZDESC2=b"binary")
+    )
+    with pytest.raises(AssertionError):
+        transaction.validate()
+
+
 def test_transfer_withdraw_rejects_zero_rate_reconstruction() -> None:
     with pytest.raises(ValueError, match="zero exchange rate"):
         TransferWithdrawTransaction(transfer_withdraw_row())

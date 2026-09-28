@@ -120,7 +120,12 @@ def nullable_decimal_field(
 
 
 def is_one_field(*aliases: str) -> FieldSpec:
-    return schema_field(*aliases, converter=lambda raw_value: raw_value == 1)
+    def converter(raw_value: Any) -> bool:
+        if type(raw_value) is not int or raw_value not in (0, 1):
+            raise ValueError("boolean field must be stored as zero or one")
+        return raw_value == 1
+
+    return schema_field(*aliases, converter=converter)
 
 
 def mapped_row(

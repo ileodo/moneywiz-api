@@ -35,7 +35,7 @@ class Transaction(Record, ABC):
     reconciled: bool
 
     amount: Decimal
-    description: str
+    description: Optional[str]
     datetime: datetime
     notes: Optional[str]
 
@@ -52,9 +52,11 @@ class Transaction(Record, ABC):
 
     def validate(self) -> None:
         super().validate()
-        assert self.reconciled is not None, self.as_dict()
+        assert type(self.reconciled) is bool
+        if hasattr(self, "account") and self.account is not None:
+            assert type(self.account) is int
         assert self.amount is not None, self.as_dict()
-        assert self.description is not None, self.as_dict()
+        assert self.description is None or type(self.description) is str
         assert self.datetime is not None, self.as_dict()
         # self.notes can be None
 
