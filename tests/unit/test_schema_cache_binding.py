@@ -312,4 +312,8 @@ def test_data_only_investment_alias_change_requires_reopening(tmp_path):
         assert accessor._read_schema_identity() == original_schema
         assert detect_schema_profile(accessor._con) != accessor.schema_profile
         with pytest.raises(DatabaseSchemaError, match="close and reopen"):
+            accessor.get_record(40, InvestmentBuyTransaction)
+        with pytest.raises(DatabaseSchemaError, match="close and reopen"):
+            accessor.get_record_by_gid("investment-40", InvestmentBuyTransaction)
+        with pytest.raises(DatabaseSchemaError, match="close and reopen"):
             TransactionManager().load(accessor)

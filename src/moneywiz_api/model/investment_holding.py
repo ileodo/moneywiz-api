@@ -78,7 +78,8 @@ class InvestmentHolding(Record):
         )
 
         # Fixes
-        self.number_of_shares = self.number_of_shares or Decimal(0)
+        if self.number_of_shares is None:
+            self.number_of_shares = Decimal(0)
 
     def validate(self) -> None:
         super().validate()

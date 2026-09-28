@@ -320,28 +320,30 @@ class DatabaseAccessor:
         return raw_constructor(row)
 
     def get_record(self, pk_id: ID, constructor: Callable = Record):
-        cur = self._con.cursor()
-        res = cur.execute(
-            """
+        with self.read_transaction():
+            cur = self._con.cursor()
+            res = cur.execute(
+                """
         SELECT * FROM ZSYNCOBJECT WHERE Z_PK = ?
         
         """,
-            [pk_id],
-        )
+                [pk_id],
+            )
 
-        return self._construct_record(res.fetchone(), constructor)
+            return self._construct_record(res.fetchone(), constructor)
 
     def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
-        cur = self._con.cursor()
-        res = cur.execute(
-            """
+        with self.read_transaction():
+            cur = self._con.cursor()
+            res = cur.execute(
+                """
         SELECT * FROM ZSYNCOBJECT WHERE ZGID = ?
         
         """,
-            [gid],
-        )
+                [gid],
+            )
 
-        return self._construct_record(res.fetchone(), constructor)
+            return self._construct_record(res.fetchone(), constructor)
 
     def read_category_assignments(
         self,

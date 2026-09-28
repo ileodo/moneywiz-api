@@ -110,6 +110,18 @@ def test_holding_uses_selected_profile_alias() -> None:
     assert holding.number_of_shares == Decimal("2.0")
 
 
+@pytest.mark.parametrize(("raw_quantity", "rendered"), [(0.0, "0.0"), (None, "0")])
+def test_holding_zero_quantity_fallback_preserves_scale(raw_quantity, rendered) -> None:
+    row = investment_holding_row()
+    row["ZNUMBEROFSHARES"] = raw_quantity
+
+    holding = InvestmentHolding(
+        mapped_row(row, InvestmentHolding, schema_profile=UNSUFFIXED_PROFILE)
+    )
+
+    assert str(holding.number_of_shares) == rendered
+
+
 @pytest.mark.parametrize(
     ("constructor", "transaction_row"),
     [
@@ -247,7 +259,12 @@ class StaticConnection:
         return StaticCursor(self.row)
 
 
-def test_accessor_public_constructors_receive_schema_profile() -> None:
+def test_accessor_public_constructors_receive_schema_profile(monkeypatch) -> None:
+    @contextmanager
+    def static_read_transaction(_accessor):
+        yield
+
+    monkeypatch.setattr(DatabaseAccessor, "read_transaction", static_read_transaction)
     transaction_accessor = DatabaseAccessor.__new__(DatabaseAccessor)
     transaction_accessor._con = cast(
         Any, StaticConnection(investment_transaction_row(40, -20.0))
