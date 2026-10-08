@@ -44,7 +44,7 @@ def test_schema_profile_resolves_inherited_fields_and_converts_values():
 
 
 def test_schema_fields_reports_missing_columns():
-    with pytest.raises(RuntimeError, match="amount: Could not resolve field amount"):
+    with pytest.raises(RuntimeError, match=r"amount: .*Could not resolve field amount"):
         EXAMPLE_PROFILE.create_record(_record_columns(), ExampleRecord)
 
 

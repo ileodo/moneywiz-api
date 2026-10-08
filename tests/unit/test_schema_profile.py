@@ -8,8 +8,13 @@ from moneywiz_api import DEFAULT_SCHEMA_PROFILE, MoneywizApi, SchemaProfile
 from moneywiz_api.managers.tag_manager import TagManager
 from moneywiz_api.model.account import Account, CreditCardAccount, LoanAccount
 from moneywiz_api.model.record import Record
-from moneywiz_api.schema.schema_fields import decimal_field, schema_field
+from moneywiz_api.schema.schema_fields import (
+    datetime_field,
+    decimal_field,
+    schema_field,
+)
 from moneywiz_api.model.tag import Tag
+from moneywiz_api.schema.schema_profile import get_all_record_subclasses
 
 
 def tag_row():
@@ -95,7 +100,7 @@ def test_complete_profile_and_immutable_definitions():
     row = {**tag_row(), "ID": 3}
     record = profile.create_record(row, Record)
     assert record.id == 3
-    with pytest.raises(RuntimeError, match="name: Could not resolve field name"):
+    with pytest.raises(RuntimeError, match=r"name: .*Could not resolve field name"):
         DEFAULT_SCHEMA_PROFILE.create_record({"Z_PK": 1}, Tag)
     with pytest.raises(TypeError):
         profile.column_map["Record"]["id"] = schema_field("OTHER")
@@ -125,6 +130,7 @@ def test_api_resolves_profile_from_database_path():
         patch("moneywiz_api.moneywiz_api.SchemaProfileResolver") as resolver_cls,
         patch("moneywiz_api.moneywiz_api.DatabaseAccessor") as accessor_cls,
         patch.object(MoneywizApi, "load"),
+        patch.object(DEFAULT_SCHEMA_PROFILE, "validate"),
     ):
         resolver_cls.return_value.resolve.return_value = DEFAULT_SCHEMA_PROFILE
         api = MoneywizApi("unused.sqlite")
@@ -136,7 +142,15 @@ def test_api_resolves_profile_from_database_path():
 
 
 def test_default_profile_is_valid_for_all_record_models():
-    DEFAULT_SCHEMA_PROFILE.validate()
+    model_classes = [
+        cls
+        for cls in get_all_record_subclasses()
+        if cls.__module__.startswith("moneywiz_api.model.")
+    ]
+    assert {cls.__name__ for cls in model_classes} == set(
+        DEFAULT_SCHEMA_PROFILE.column_map
+    )
+    DEFAULT_SCHEMA_PROFILE.validate(model_classes)
 
 
 def test_validation_reports_missing_public_and_inherited_fields():
@@ -144,14 +158,20 @@ def test_validation_reports_missing_public_and_inherited_fields():
     with pytest.raises(ValueError) as error:
         profile.validate([Tag])
     assert str(error.value) == (
-        "Missing schema field definitions: Tag.gid, Tag.id, Tag.user"
+        "Missing schema field definitions: Tag.ent, Tag.created_at, "
+        "Tag.gid, Tag.id, Tag.user"
     )
 
 
 def test_validation_accepts_inherited_definitions_and_ignores_private_fields():
     profile = SchemaProfile(
         {
-            Record: {"gid": schema_field("GID"), "id": schema_field("ID")},
+            Record: {
+                "ent": schema_field("ENT"),
+                "created_at": datetime_field("CREATED_AT"),
+                "gid": schema_field("GID"),
+                "id": schema_field("ID"),
+            },
             Account: {
                 name: schema_field(name)
                 for name in (
@@ -170,18 +190,16 @@ def test_validation_accepts_inherited_definitions_and_ignores_private_fields():
     profile.validate([LoanAccount])
 
 
-def test_validation_discovers_application_record_subclasses():
+def test_validation_can_check_custom_models_explicitly():
     @dataclass
     class CustomRecord(Record):
         custom_value: str
         _private_value: str
 
-    with pytest.raises(ValueError, match="CustomRecord.custom_value"):
-        DEFAULT_SCHEMA_PROFILE.validate()
     profile = SchemaProfile(
         {
             **DEFAULT_SCHEMA_PROFILE.column_map,
             CustomRecord.__name__: {"custom_value": schema_field("CUSTOM_VALUE")},
         }
     )
-    profile.validate()
+    profile.validate([CustomRecord])

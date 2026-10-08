@@ -52,5 +52,14 @@ def test_datetime_field_uses_configured_value_for_null():
         }
     )
 
-    record = profile.create_record({"ZDATE": None}, TimestampedRow)
+    record = profile.create_record(
+        {
+            "Z_ENT": 1,
+            "ZOBJECTCREATIONDATE": 0,
+            "ZGID": "gid",
+            "Z_PK": 1,
+            "ZDATE": None,
+        },
+        TimestampedRow,
+    )
     assert record.timestamp == fallback
