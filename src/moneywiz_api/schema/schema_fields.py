@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable
 
-from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 
 Converter = Callable[[Any], Any]
 

@@ -1,4 +1,13 @@
 from moneywiz_api.moneywiz_api import MoneywizApi
-from moneywiz_api.schema_profile import DEFAULT_SCHEMA_PROFILE, SchemaProfile
+from moneywiz_api.schema.schema_profile import SchemaProfile
+from moneywiz_api.schema.schema_profile_resolver import (
+    DEFAULT_SCHEMA_PROFILE,
+    SchemaProfileResolver,
+)
 
-__all__ = ["MoneywizApi", "SchemaProfile", "DEFAULT_SCHEMA_PROFILE"]
+__all__ = [
+    "MoneywizApi",
+    "SchemaProfile",
+    "SchemaProfileResolver",
+    "DEFAULT_SCHEMA_PROFILE",
+]

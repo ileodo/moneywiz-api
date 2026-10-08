@@ -1,4 +1,3 @@
-from moneywiz_api.schema_profile import SchemaProfile
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, TypeVar
 
@@ -10,8 +9,7 @@ T = TypeVar("T", bound=Record)
 
 
 class RecordManager(ABC, Generic[T]):
-    def __init__(self, schema_profile: SchemaProfile) -> None:
-        self.schema_profile = schema_profile
+    def __init__(self) -> None:
         self._records: Dict[ID, T] = {}
         self._gid_to_id: Dict[GID, ID] = {}
 
@@ -30,7 +28,7 @@ class RecordManager(ABC, Generic[T]):
             )
 
             model_cls = self.ents[typename]
-            obj = model_cls(record, self.schema_profile)
+            obj = model_cls(record, db_accessor.schema_profile)
             obj.validate()
             self.add(obj)
 

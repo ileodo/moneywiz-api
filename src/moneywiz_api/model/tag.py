@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from moneywiz_api.schema_profile import SchemaProfile
+    from moneywiz_api.schema.schema_profile import SchemaProfile
 
 from dataclasses import dataclass
 

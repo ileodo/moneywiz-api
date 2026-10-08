@@ -1,8 +1,10 @@
+from moneywiz_api import DEFAULT_SCHEMA_PROFILE
 import sqlite3
 
 import pytest
 
 from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.schema.schema_profile import TagTableInfo
 
 
 def _create_accessor(db_path):
@@ -12,7 +14,14 @@ def _create_accessor(db_path):
     con.commit()
     con.close()
 
-    return DatabaseAccessor(db_path)
+    profile = DEFAULT_SCHEMA_PROFILE.with_tag_table_info(
+        TagTableInfo(
+            table_name="Z_37TAGS",
+            transactions_column="Z_3TRANSACTIONS",
+            tags_column="Z_4TAGS",
+        )
+    )
+    return DatabaseAccessor(db_path, profile)
 
 
 def test_get_tags_map_uses_highest_numbered_tags_table(tmp_path):
@@ -27,11 +36,16 @@ def test_get_tags_map_uses_highest_numbered_tags_table(tmp_path):
     accessor._con.commit()
 
     assert accessor.get_tags_map() == {2: [20, 21]}
+    assert accessor.schema_profile.tag_table_info == TagTableInfo(
+        table_name="Z_37TAGS",
+        transactions_column="Z_3TRANSACTIONS",
+        tags_column="Z_4TAGS",
+    )
 
 
 def test_get_tags_map_raises_when_tags_table_is_missing(tmp_path):
     db_path = tmp_path / "moneywiz.sqlite"
     accessor = _create_accessor(db_path)
 
-    with pytest.raises(ValueError, match="Z_<number>TAGS"):
+    with pytest.raises(sqlite3.OperationalError, match="no such table"):
         accessor.get_tags_map()

@@ -8,7 +8,7 @@ from moneywiz_api import DEFAULT_SCHEMA_PROFILE, MoneywizApi, SchemaProfile
 from moneywiz_api.managers.tag_manager import TagManager
 from moneywiz_api.model.account import Account, CreditCardAccount, LoanAccount
 from moneywiz_api.model.record import Record
-from moneywiz_api.model.schema_fields import decimal_field, schema_field
+from moneywiz_api.schema.schema_fields import decimal_field, schema_field
 from moneywiz_api.model.tag import Tag
 
 
@@ -86,9 +86,9 @@ def test_complete_profile_and_immutable_definitions():
     definitions = {"Record": {"id": schema_field("ID")}}
     profile = SchemaProfile(definitions)
     definitions["Record"].clear()
-    assert profile.get_field({"ID": 3}, Record, "id") == 3
+    assert profile.get_fields({"ID": 3}, Record)["id"] == 3
     with pytest.raises(KeyError):
-        profile.get_field(tag_row(), Tag, "name")
+        profile.get_fields(tag_row(), Tag)
     with pytest.raises(TypeError):
         profile.column_map["Record"]["id"] = schema_field("OTHER")
 
@@ -104,37 +104,27 @@ def test_manager_uses_injected_profile():
         }
     )
     accessor = Mock()
+    accessor.schema_profile = profile
     accessor.query_objects.return_value = [tag_row()]
     accessor.typename_for.return_value = "Tag"
-    manager = TagManager(profile)
+    manager = TagManager()
     manager.load(accessor)
     assert manager.get(1).name == "custom"
 
 
-def test_api_passes_profile_to_all_managers():
-    profile = SchemaProfile(
-        {
-            **DEFAULT_SCHEMA_PROFILE.column_map,
-            Tag.__name__: {
-                **DEFAULT_SCHEMA_PROFILE.column_map[Tag.__name__],
-                **{"name": schema_field("CUSTOM_NAME")},
-            },
-        }
-    )
+def test_api_resolves_profile_from_database_path():
     with (
-        patch("moneywiz_api.moneywiz_api.DatabaseAccessor"),
+        patch("moneywiz_api.moneywiz_api.SchemaProfileResolver") as resolver_cls,
+        patch("moneywiz_api.moneywiz_api.DatabaseAccessor") as accessor_cls,
         patch.object(MoneywizApi, "load"),
     ):
-        api = MoneywizApi("unused.sqlite", schema_profile=profile)
-    for name in (
-        "account",
-        "category",
-        "payee",
-        "tag",
-        "transaction",
-        "investment_holding",
-    ):
-        assert getattr(api, f"{name}_manager").schema_profile is profile
+        resolver_cls.return_value.resolve.return_value = DEFAULT_SCHEMA_PROFILE
+        api = MoneywizApi("unused.sqlite")
+
+    resolver_cls.assert_called_once_with("unused.sqlite")
+    resolver_cls.return_value.resolve.assert_called_once_with()
+    accessor_cls.assert_called_once_with("unused.sqlite", DEFAULT_SCHEMA_PROFILE)
+    assert api.accessor is accessor_cls.return_value
 
 
 def test_default_profile_is_valid_for_all_record_models():

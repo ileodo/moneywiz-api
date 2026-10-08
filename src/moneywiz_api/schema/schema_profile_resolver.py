@@ -1,116 +1,70 @@
-"""Field definitions for each model in a MoneyWiz database schema."""
+"""Resolve database-specific metadata for a schema profile."""
 
-from dataclasses import fields as dataclass_fields
-from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Iterable, Mapping
+import re
+import sqlite3
+from pathlib import Path
 
-if TYPE_CHECKING:
-    from moneywiz_api.model.record import Record
-
-from moneywiz_api.model.schema_fields import (
-    FieldSpec,
+from moneywiz_api.schema.schema_fields import (
     datetime_field,
     decimal_field,
     is_one_field,
     nullable_decimal_field,
     schema_field,
 )
+from moneywiz_api.schema.schema_profile import SchemaProfile, TagTableInfo
 from moneywiz_api.utils import get_datetime
 
-ColumnMap = (
-    Mapping[str, Mapping[str, FieldSpec]]
-    | Mapping[type, Mapping[str, FieldSpec]]
-    | Mapping[str | type, Mapping[str, FieldSpec]]
-)
 
+class SchemaProfileResolver:
+    """Build a profile from a database path and an optional baseline profile."""
 
-class SchemaProfile:
-    """A per-model schema, resolved in base-to-subclass inheritance order.
+    def __init__(
+        self, db_path: str | Path, baseline: SchemaProfile | None = None
+    ):
+        self._db_path = db_path
+        self._baseline = DEFAULT_SCHEMA_PROFILE if baseline is None else baseline
 
-    ``column_map`` keys may be model classes or their names. Each entry defines that class's
-    own fields; inherited fields are supplied by the entries for its bases.
-    """
+    def resolve(self) -> SchemaProfile:
+        """Return the baseline enriched with tag-table details from the database."""
+        if self._baseline.tag_table_info is not None:
+            return self._baseline
 
-    def __init__(self, column_map: ColumnMap):
-        self.column_map = MappingProxyType(
-            {
-                key if isinstance(key, str) else key.__name__: MappingProxyType(
-                    dict(value)
-                )
-                for key, value in column_map.items()
-            }
-        )
-
-    def get_field(
-        self, row: Mapping[str, Any], model_cls: type, field_name: str
-    ) -> Any:
-        """Resolve one model field directly from a raw database row."""
-        spec = self.fields_for(model_cls)[field_name]
-        for alias in spec.aliases:
-            if alias in row:
-                value = row[alias]
-                if spec.converter is not None:
-                    try:
-                        return spec.converter(value)
-                    except Exception as error:
-                        from moneywiz_api.model.raw_data_handler import RawDataHandler
-
-                        raise RuntimeError(
-                            f"Failed to convert field {field_name} using column {alias} "
-                            f"with value {value}, the exception was: {error}. "
-                            f"the row was: {RawDataHandler.filter_row(dict(row))}"
-                        ) from error
-                return value
-        raise KeyError(
-            f"Could not resolve field {field_name}. Tried {list(spec.aliases)}. "
-            f"Available columns: {list(row.keys())}"
-        )
-
-    def assign_fields(self, record: "Record", row: Mapping[str, Any]) -> None:
-        """Assign every public dataclass field directly from a raw row."""
-        for field in dataclass_fields(record):
-            if not field.name.startswith("_"):
-                setattr(
-                    record, field.name, self.get_field(row, type(record), field.name)
-                )
-
-    def fields_for(self, model_cls: type) -> dict[str, FieldSpec]:
-        fields: dict[str, FieldSpec] = {}
-        for cls in reversed(model_cls.mro()):
-            # Preserve support for application-defined Record subclasses.
-            fields.update(cls.__dict__.get("FIELDS", {}))
-            fields.update(self.column_map.get(cls.__name__, {}))
-        return fields
-
-    def validate(self, model_classes: Iterable[type["Record"]] | None = None) -> None:
-        """Raise ValueError for public dataclass fields without definitions.
-
-        By default, check Record and all currently loaded subclasses. An explicit
-        iterable can restrict validation to selected models. Inherited definitions
-        count, and fields whose names begin with an underscore are ignored.
-        """
-        from moneywiz_api.model.record import Record
-
-        if model_classes is None:
-            discovered = {Record}
-            pending = [Record]
-            while pending:
-                for subclass in pending.pop().__subclasses__():
-                    if subclass not in discovered:
-                        discovered.add(subclass)
-                        pending.append(subclass)
-            model_classes = sorted(discovered, key=lambda cls: cls.__name__)
-
-        missing: list[str] = []
-        for model_cls in model_classes:
-            definitions = self.fields_for(model_cls)
-            missing.extend(
-                f"{model_cls.__name__}.{field.name}"
-                for field in dataclass_fields(model_cls)
-                if not field.name.startswith("_") and field.name not in definitions
+        connection = sqlite3.connect(self._db_path, uri=True)
+        connection.row_factory = sqlite3.Row
+        try:
+            return self._baseline.with_tag_table_info(
+                self._get_tags_table_info(connection)
             )
-        if missing:
-            raise ValueError("Missing schema field definitions: " + ", ".join(missing))
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _get_tags_table_info(connection: sqlite3.Connection) -> TagTableInfo:
+        cursor = connection.cursor()
+        result = cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        tag_tables = []
+        for row in result.fetchall():
+            match = re.fullmatch(r"Z_(\d+)TAGS", row["name"])
+            if match:
+                tag_tables.append((int(match.group(1)), row["name"]))
+
+        if not tag_tables:
+            raise ValueError("Could not find a tags join table matching Z_<number>TAGS")
+
+        table_name = max(tag_tables)[1]
+        result = cursor.execute(f'PRAGMA table_info("{table_name}")')
+        columns = [row["name"] for row in result.fetchall()]
+        transaction_columns = [
+            column for column in columns if re.fullmatch(r"Z_\d+TRANSACTIONS", column)
+        ]
+        tag_columns = [
+            column for column in columns if re.fullmatch(r"Z_\d+TAGS", column)
+        ]
+
+        if len(transaction_columns) != 1 or len(tag_columns) != 1:
+            raise ValueError(f"Could not find expected tag columns in {table_name}")
+
+        return TagTableInfo(table_name, transaction_columns[0], tag_columns[0])
 
 
 DEFAULT_SCHEMA_PROFILE = SchemaProfile(

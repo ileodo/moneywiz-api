@@ -48,13 +48,31 @@ It also offers a interactive shell `moneywiz-cli`.
 
 ### Schema profiles
 
-`SchemaProfile` defines column aliases and converters for `Record` and its
-subclasses. Build a profile directly from Python field specifications:
+`MoneywizApi` resolves the default `SchemaProfile` from the database path when it
+is constructed, then validates the profile before loading records. You do not
+need to pass a profile to `MoneywizApi`:
 
 ```python
-from moneywiz_api import DEFAULT_SCHEMA_PROFILE, MoneywizApi, SchemaProfile
+from moneywiz_api import MoneywizApi
+
+api = MoneywizApi("<path_to_your_sqlite_file>")
+```
+
+A `SchemaProfile` maps each `Record` field to one or more database column names
+and optional converters. Field specifications are available from
+`moneywiz_api.schema.schema_fields`, including `schema_field`,
+`datetime_field`, `decimal_field`, `nullable_decimal_field`, and `is_one_field`.
+Definitions for base classes are inherited by their subclasses. Calling
+`profile.validate()` checks that every public dataclass field on loaded `Record`
+subclasses has a definition; fields whose names start with `_` are ignored.
+
+To create a customized profile, start with `DEFAULT_SCHEMA_PROFILE` and replace
+the field mapping you need:
+
+```python
+from moneywiz_api import DEFAULT_SCHEMA_PROFILE, SchemaProfile
 from moneywiz_api.model.tag import Tag
-from moneywiz_api.model.schema_fields import schema_field
+from moneywiz_api.schema.schema_fields import schema_field
 
 column_map = {
     **DEFAULT_SCHEMA_PROFILE.column_map,
@@ -65,17 +83,15 @@ column_map = {
 }
 profile = SchemaProfile(column_map)
 profile.validate()
-api = MoneywizApi("<path_to_your_sqlite_file>", schema_profile=profile)
 ```
 
-Use `schema_field`, `datetime_field`, `decimal_field`,
-`nullable_decimal_field`, or `is_one_field` to define each field. Base-class
-fields are inherited by subclasses. `profile.validate()` checks public dataclass
-fields on loaded `Record` subclasses and reports any missing definitions.
-
-`SchemaProfile.get_field(row, model_class, field_name)` resolves a field from a
-raw row. Record constructors use the profile to assign public fields; private
-fields and model-specific fixups stay in the constructors. Pass a profile to a manager or directly to a model constructor to use a custom mapping.
+`SchemaProfileResolver(db_path, baseline=None).resolve()` enriches a profile
+with database-specific tag-join table details. When no baseline is provided, it
+uses `DEFAULT_SCHEMA_PROFILE`. The resolved profile can be used with the lower-level
+`DatabaseAccessor(db_path, profile)` API. `MoneywizApi` currently uses the
+default profile automatically. `SchemaProfile.get_fields(row, model_class)` resolves all mapped fields from a
+raw row and reports field-resolution failures together. Direct model construction
+takes a profile as its second argument.
 
 ## Tests
 

@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api import DEFAULT_SCHEMA_PROFILE
-from moneywiz_api.model.schema_fields import datetime_field
+from moneywiz_api.schema.schema_fields import datetime_field
+from moneywiz_api.schema.schema_profile import SchemaProfile
 
 
 def test_get_decimal():
@@ -31,16 +32,22 @@ def test_record_defaults_missing_creation_date_to_apple_epoch():
         DEFAULT_SCHEMA_PROFILE,
     )
 
-    assert record._created_at == datetime(2001, 1, 1)
+    assert record.created_at == datetime(2001, 1, 1)
 
 
 def test_datetime_field_uses_configured_value_for_null():
     fallback = datetime(2001, 1, 1)
 
     class TimestampedRow:
-        FIELDS = {"timestamp": datetime_field("ZDATE", value_if_null=fallback)}
+        pass
 
-    assert (
-        DEFAULT_SCHEMA_PROFILE.get_field({"ZDATE": None}, TimestampedRow, "timestamp")
-        == fallback
+    profile = SchemaProfile(
+        {
+            **DEFAULT_SCHEMA_PROFILE.column_map,
+            TimestampedRow: {
+                "timestamp": datetime_field("ZDATE", value_if_null=fallback)
+            },
+        }
     )
+
+    assert profile.get_fields({"ZDATE": None}, TimestampedRow)["timestamp"] == fallback

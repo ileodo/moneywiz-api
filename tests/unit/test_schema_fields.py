@@ -5,17 +5,23 @@ import pytest
 
 from moneywiz_api.model.record import Record
 from moneywiz_api import DEFAULT_SCHEMA_PROFILE
-from moneywiz_api.model.schema_fields import decimal_field
+from moneywiz_api.schema.schema_fields import decimal_field
 from moneywiz_api.model.tag import Tag
 from moneywiz_api.model.category import Category
-from moneywiz_api.model.schema_fields import schema_field
+from moneywiz_api.schema.schema_fields import schema_field
 from moneywiz_api import SchemaProfile
 
 
 class ExampleRecord(Record):
-    FIELDS = {
-        "amount": decimal_field("ZAMOUNT"),
+    pass
+
+
+EXAMPLE_PROFILE = SchemaProfile(
+    {
+        **DEFAULT_SCHEMA_PROFILE.column_map,
+        ExampleRecord.__name__: {"amount": decimal_field("ZAMOUNT")},
     }
+)
 
 
 def _record_columns():
@@ -30,15 +36,13 @@ def _record_columns():
 def test_schema_profile_resolves_inherited_fields_and_converts_values():
     row = {**_record_columns(), "ZAMOUNT": 12.34}
 
-    assert DEFAULT_SCHEMA_PROFILE.get_field(row, ExampleRecord, "id") == 1
-    assert DEFAULT_SCHEMA_PROFILE.get_field(row, ExampleRecord, "amount") == Decimal(
-        "12.34"
-    )
+    assert EXAMPLE_PROFILE.get_fields(row, ExampleRecord)["id"] == 1
+    assert EXAMPLE_PROFILE.get_fields(row, ExampleRecord)["amount"] == Decimal("12.34")
 
 
 def test_schema_fields_reports_missing_columns():
     with pytest.raises(KeyError, match="Could not resolve field amount"):
-        DEFAULT_SCHEMA_PROFILE.get_field(_record_columns(), ExampleRecord, "amount")
+        EXAMPLE_PROFILE.get_fields(_record_columns(), ExampleRecord)
 
 
 def test_model_constructor_accepts_raw_row_with_schema_fields():

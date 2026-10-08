@@ -1,4 +1,3 @@
-from moneywiz_api.schema_profile import SchemaProfile
 from typing import Dict, List
 from decimal import Decimal
 
@@ -8,9 +7,6 @@ from moneywiz_api.types import ID
 
 
 class InvestmentHoldingManager(RecordManager[InvestmentHolding]):
-    def __init__(self, schema_profile: SchemaProfile):
-        super().__init__(schema_profile)
-
     @property
     def ents(self) -> Dict[str, type[InvestmentHolding]]:
         return {
