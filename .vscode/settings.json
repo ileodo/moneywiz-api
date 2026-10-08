@@ -7,5 +7,5 @@
     "setuptools",
     "Unconfigured"
   ],
-  "ruff.configuration": ""
+  "cSpell.language": "en-GB"
 }
