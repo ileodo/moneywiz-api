@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -27,7 +27,7 @@ jobs:
 
       - name: Lint code with Ruff
         run: ruff check --output-format=github
-      
+
       - name: Check code formatting with Ruff
         run: ruff format --diff
 
@@ -36,7 +36,7 @@ jobs:
 
       - name: Test with pytest
         run: pytest tests/unit --doctest-modules --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
-      
+
       - name: Upload pytest test results
         uses: actions/upload-artifact@v4
         with:
