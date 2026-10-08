@@ -1,34 +1,42 @@
 
-VENV?=${VIRTUAL_ENV}
+PYTHON ?= python3.14
+VENV ?= $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV),.venv)
+VENV_PYTHON = $(VENV)/bin/python
 
-${VENV}/bin/activate:
-	python3.10 -m venv ${VENV}
+.PHONY: venv install test ruff mypy format shell package test-publish publish
 
-venv: ${VENV}/bin/activate
+$(VENV_PYTHON):
+	$(PYTHON) -m venv "$(VENV)"
 
-install: pyproject.toml venv
-	${VENV}/bin/pip3 install -e .[dev]
+venv: $(VENV_PYTHON)
+	@"$(VENV_PYTHON)" -c 'import sys; sys.exit(sys.version_info < (3, 10))' || { \
+		echo "$(VENV) must use Python 3.10 or newer; recreate it or set VENV to another path." >&2; \
+		exit 1; \
+	}
 
-test:
-	${VENV}/bin/python -m pytest tests
+install: venv
+	"$(VENV_PYTHON)" -m pip install -e '.[dev]'
 
-ruff:
-	${VENV}/bin/python -m ruff check
+test: venv
+	"$(VENV_PYTHON)" -m pytest tests
 
-mypy:
-	${VENV}/bin/python -m mypy src tests
+ruff: venv
+	"$(VENV_PYTHON)" -m ruff check .
 
-format:
-	${VENV}/bin/python -m ruff format
+mypy: venv
+	"$(VENV_PYTHON)" -m mypy src tests
 
-shell:
-	${VENV}/bin/python src/moneywiz_api/cli/cli.py
+format: venv
+	"$(VENV_PYTHON)" -m ruff format .
 
-package:
-	${VENV}/bin/python -m build
+shell: venv
+	"$(VENV_PYTHON)" src/moneywiz_api/cli/cli.py
 
-test-publish:
-	${VENV}/bin/python -m twine upload --repository testpypi dist/*
+package: venv
+	"$(VENV_PYTHON)" -m build
 
-publish:
-	${VENV}/bin/python -m twine upload --repository pypi dist/*
+test-publish: venv
+	"$(VENV_PYTHON)" -m twine upload --repository testpypi dist/*
+
+publish: venv
+	"$(VENV_PYTHON)" -m twine upload --repository pypi dist/*
