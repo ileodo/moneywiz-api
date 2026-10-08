@@ -2,7 +2,7 @@ import sqlite3
 from collections import defaultdict
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
@@ -68,7 +68,7 @@ class DatabaseAccessor:
         )
         return res.fetchall()
 
-    def get_record(self, pk_id: ID, constructor: Callable = Record):
+    def get_record(self, pk_id: ID, constructor: type[Record] = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -78,9 +78,9 @@ class DatabaseAccessor:
             [pk_id],
         )
 
-        return constructor(res.fetchone(), self.schema_profile)
+        return self.schema_profile.create_record(res.fetchone(), constructor)
 
-    def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
+    def get_record_by_gid(self, gid: GID, constructor: type[Record] = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -90,7 +90,7 @@ class DatabaseAccessor:
             [gid],
         )
 
-        return constructor(res.fetchone(), self.schema_profile)
+        return self.schema_profile.create_record(res.fetchone(), constructor)
 
     def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, Decimal]]]:
         transaction_map: Dict[ID, List[Tuple[ID, Decimal]]] = defaultdict(list)

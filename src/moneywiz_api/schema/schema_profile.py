@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, fields as dataclass_fields
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, cast
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar, cast
 
 if TYPE_CHECKING:
     from moneywiz_api.model.record import Record
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 from moneywiz_api.schema.schema_fields import FieldSpec
 
 ColumnMap = Mapping[str | type, Mapping[str, FieldSpec]]
+RecordT = TypeVar("RecordT", bound="Record")
 
 
 @dataclass(frozen=True)
@@ -48,16 +49,18 @@ class SchemaProfile:
         """Return this column map with tag-join table details resolved from a database."""
         return SchemaProfile(self.column_map, tag_table_info)
 
-    def get_fields(self, row: Mapping[str, Any], model_cls: type) -> dict[str, Any]:
-        """Resolve all public model fields from a raw database row."""
-        values: dict[str, Any] = {}
+    def create_record(
+        self, row: Mapping[str, Any], model_cls: type[RecordT]
+    ) -> RecordT:
+        """Create a model instance populated from a raw database row."""
+        field_values: dict[str, Any] = {}
         errors: list[tuple[str, Exception]] = []
         for field in dataclass_fields(model_cls):
             field_name = field.name
             if field_name.startswith("_"):
                 continue
             try:
-                values[field_name] = self._get_field(row, model_cls, field_name)
+                field_values[field_name] = self._get_field(row, model_cls, field_name)
             except Exception as error:
                 errors.append((field_name, error))
 
@@ -68,7 +71,7 @@ class SchemaProfile:
             raise RuntimeError(
                 f"Failed to resolve fields for {model_cls.__name__}: {details}"
             ) from errors[0][1]
-        return values
+        return model_cls(row, field_values)
 
     def _get_field(
         self, row: Mapping[str, Any], model_cls: type, field_name: str

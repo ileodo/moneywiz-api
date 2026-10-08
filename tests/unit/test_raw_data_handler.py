@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
@@ -22,14 +23,14 @@ def test_get_datetime_epoch():
 
 
 def test_record_defaults_missing_creation_date_to_apple_epoch():
-    record = Record(
+    record = DEFAULT_SCHEMA_PROFILE.create_record(
         {
             "Z_ENT": 1,
             "ZOBJECTCREATIONDATE": None,
             "ZGID": "sanitized-example",
             "Z_PK": 1,
         },
-        DEFAULT_SCHEMA_PROFILE,
+        Record,
     )
 
     assert record.created_at == datetime(2001, 1, 1)
@@ -38,8 +39,9 @@ def test_record_defaults_missing_creation_date_to_apple_epoch():
 def test_datetime_field_uses_configured_value_for_null():
     fallback = datetime(2001, 1, 1)
 
-    class TimestampedRow:
-        pass
+    @dataclass
+    class TimestampedRow(Record):
+        timestamp: datetime
 
     profile = SchemaProfile(
         {
@@ -50,4 +52,5 @@ def test_datetime_field_uses_configured_value_for_null():
         }
     )
 
-    assert profile.get_fields({"ZDATE": None}, TimestampedRow)["timestamp"] == fallback
+    record = profile.create_record({"ZDATE": None}, TimestampedRow)
+    assert record.timestamp == fallback

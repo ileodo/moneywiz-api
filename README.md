@@ -87,11 +87,19 @@ profile.validate()
 
 `SchemaProfileResolver(db_path, baseline=None).resolve()` enriches a profile
 with database-specific tag-join table details. When no baseline is provided, it
-uses `DEFAULT_SCHEMA_PROFILE`. The resolved profile can be used with the lower-level
-`DatabaseAccessor(db_path, profile)` API. `MoneywizApi` currently uses the
-default profile automatically. `SchemaProfile.get_fields(row, model_class)` resolves all mapped fields from a
-raw row and reports field-resolution failures together. Direct model construction
-takes a profile as its second argument.
+uses `DEFAULT_SCHEMA_PROFILE`. The resolved profile can be passed to `MoneywizApi` or the lower-level
+`DatabaseAccessor`:
+
+```python
+db_path = "<path_to_your_sqlite_file>"
+resolved_profile = SchemaProfileResolver(db_path, profile).resolve()
+api = MoneywizApi(db_path, schema_profile=resolved_profile)
+```
+
+`SchemaProfile.create_record(row, ModelClass)` resolves all public fields from
+a raw row, reports field-resolution failures together, and creates the model
+instance. Record
+classes receive mapped field values and do not depend on `SchemaProfile`.
 
 ## Tests
 

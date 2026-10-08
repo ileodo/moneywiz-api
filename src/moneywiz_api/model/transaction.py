@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
@@ -30,8 +25,8 @@ class Transaction(Record, ABC):
     datetime: datetime
     notes: Optional[str]
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
 
@@ -55,8 +50,8 @@ class DepositTransaction(Transaction):
     original_amount: Decimal  # neg: expense, pos: income
     original_exchange_rate: Optional[Decimal]
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         if self.original_exchange_rate == Decimal(0):
@@ -91,8 +86,8 @@ class InvestmentExchangeTransaction(Transaction):
     original_fee: Decimal  # pos: fee, neg: income?
     original_fee_currency: str
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         if self.original_fee_currency == self.from_symbol:
@@ -114,8 +109,8 @@ class InvestmentExchangeTransaction(Transaction):
 
 @dataclass
 class InvestmentTransaction(Transaction, ABC):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
@@ -133,8 +128,8 @@ class InvestmentBuyTransaction(InvestmentTransaction):
     number_of_shares: Decimal
     price_per_share: Decimal
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         self.fee = max(self.fee, Decimal(0))
@@ -170,8 +165,8 @@ class InvestmentSellTransaction(InvestmentTransaction):
     number_of_shares: Decimal
     price_per_share: Decimal
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         self.fee = max(self.fee, Decimal(0))
@@ -203,8 +198,8 @@ class ReconcileTransaction(Transaction):
     reconcile_amount: Decimal | None  # new balance
     reconcile_number_of_shares: Decimal | None  # new balance
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
     def validate(self) -> None:
         super().validate()
@@ -226,8 +221,8 @@ class RefundTransaction(Transaction):
     original_amount: Decimal
     original_exchange_rate: Optional[Decimal]
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         if self.original_exchange_rate == Decimal(0):
@@ -251,8 +246,8 @@ class RefundTransaction(Transaction):
 
 @dataclass
 class TransferBudgetTransaction(Transaction):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
         # TODO: Not Implemented
 
 
@@ -275,8 +270,8 @@ class TransferDepositTransaction(Transaction):
 
     original_exchange_rate: Decimal
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         # Some legacy transfers store zero original metadata even though
@@ -337,8 +332,8 @@ class TransferWithdrawTransaction(Transaction):
 
     original_exchange_rate: Decimal
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         if (
@@ -387,8 +382,8 @@ class WithdrawTransaction(Transaction):
     original_amount: Decimal  # neg: expense, pos: income ATTENTION: sign got fixed
     original_exchange_rate: Optional[Decimal]
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         if self.amount * self.original_amount < 0:

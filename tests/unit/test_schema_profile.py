@@ -39,11 +39,11 @@ def test_profile_injection_is_isolated_and_preserved_through_constructors():
         }
     )
     raw = {**tag_row(), "CUSTOM_ID": 9}
-    custom = Tag(raw, profile)
-    default = Tag(raw, DEFAULT_SCHEMA_PROFILE)
+    custom = profile.create_record(raw, Tag)
+    default = DEFAULT_SCHEMA_PROFILE.create_record(raw, Tag)
     assert (custom.id, custom.name, custom.user) == (9, "custom", 2)
     assert (default.id, default.name) == (1, "default")
-    assert Tag(raw, profile).name == "custom"
+    assert profile.create_record(raw, Tag).name == "custom"
 
 
 def test_profile_merges_multiple_inheritance_levels_and_converters():
@@ -75,7 +75,7 @@ def test_profile_merges_multiple_inheritance_levels_and_converters():
         "ZUSER": 2,
         "STATEMENT": 15,
     }
-    loan = LoanAccount(raw, profile)
+    loan = profile.create_record(raw, LoanAccount)
     assert loan.name == "loan"
     assert loan.opening_balance == Decimal("12.34")
     assert loan.statement_day == 15
@@ -83,12 +83,17 @@ def test_profile_merges_multiple_inheritance_levels_and_converters():
 
 
 def test_complete_profile_and_immutable_definitions():
-    definitions = {"Record": {"id": schema_field("ID")}}
+    definitions = {
+        **DEFAULT_SCHEMA_PROFILE.column_map,
+        "Record": {**DEFAULT_SCHEMA_PROFILE.column_map["Record"], "id": schema_field("ID")},
+    }
     profile = SchemaProfile(definitions)
     definitions["Record"].clear()
-    assert profile.get_fields({"ID": 3}, Record)["id"] == 3
-    with pytest.raises(KeyError):
-        profile.get_fields(tag_row(), Tag)
+    row = {**tag_row(), "ID": 3}
+    record = profile.create_record(row, Record)
+    assert record.id == 3
+    with pytest.raises(RuntimeError, match="name: Could not resolve field name"):
+        DEFAULT_SCHEMA_PROFILE.create_record({"Z_PK": 1}, Tag)
     with pytest.raises(TypeError):
         profile.column_map["Record"]["id"] = schema_field("OTHER")
 

@@ -28,7 +28,7 @@ class RecordManager(ABC, Generic[T]):
             )
 
             model_cls = self.ents[typename]
-            obj = model_cls(record, db_accessor.schema_profile)
+            obj = db_accessor.schema_profile.create_record(record, model_cls)
             obj.validate()
             self.add(obj)
 

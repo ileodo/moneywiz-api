@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Optional
@@ -25,8 +20,8 @@ class Account(Record, ABC):
     info: Optional[str]
     user: ID
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
 
@@ -43,28 +38,28 @@ class Account(Record, ABC):
 
 @dataclass
 class BankChequeAccount(Account):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
 class BankSavingAccount(Account):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
 class CashAccount(Account):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
 class CreditCardAccount(Account):
     statement_day: int  # day in the month
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
     def validate(self) -> None:
         super().validate()
@@ -73,17 +68,17 @@ class CreditCardAccount(Account):
 
 @dataclass
 class LoanAccount(CreditCardAccount):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
 class InvestmentAccount(Account):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
 
 @dataclass
 class ForexAccount(InvestmentAccount):
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)

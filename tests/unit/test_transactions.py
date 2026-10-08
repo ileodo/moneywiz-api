@@ -25,7 +25,7 @@ def transaction_row(**values):
 
 
 def test_transfer_deposit_derives_zero_legacy_original_amount():
-    transaction = TransferDepositTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=40.0,
             ZACCOUNT2=10,
@@ -39,7 +39,7 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
         ),
-        DEFAULT_SCHEMA_PROFILE,
+        TransferDepositTransaction,
     )
 
     assert transaction.original_amount == Decimal("40.0")
@@ -48,7 +48,7 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
 
 
 def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
-    transaction = TransferWithdrawTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=-40.0,
             ZACCOUNT2=11,
@@ -62,7 +62,7 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
         ),
-        DEFAULT_SCHEMA_PROFILE,
+        TransferWithdrawTransaction,
     )
 
     assert transaction.recipient_amount == Decimal("40.0")
@@ -71,7 +71,7 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
 
 
 def test_withdraw_ignores_stale_rate_when_amounts_are_identical():
-    transaction = WithdrawTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=-8.58,
             ZACCOUNT2=10,
@@ -80,7 +80,7 @@ def test_withdraw_ignores_stale_rate_when_amounts_are_identical():
             ZORIGINALCURRENCY="GBP",
             ZORIGINALEXCHANGERATE=1.1678321678321677,
         ),
-        DEFAULT_SCHEMA_PROFILE,
+        WithdrawTransaction,
     )
 
     assert transaction.original_exchange_rate is None

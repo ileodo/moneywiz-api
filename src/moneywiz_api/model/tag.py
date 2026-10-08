@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 from dataclasses import dataclass
 
 from moneywiz_api.model.record import Record
@@ -16,8 +11,8 @@ class Tag(Record):
     name: str
     user: ID
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
 

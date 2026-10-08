@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.schema.schema_fields import schema_field as schema_field
-from moneywiz_api.schema.schema_profile import SchemaProfile
 from moneywiz_api.types import ENT_ID, ID
 
 
@@ -23,9 +17,9 @@ class Record:
     gid: str = field(repr=False)
     id: ID
 
-    def __init__(self, row, schema_profile: SchemaProfile):
+    def __init__(self, row, field_values: Mapping[str, Any]):
         self._raw = row
-        for field_name, value in schema_profile.get_fields(row, type(self)).items():
+        for field_name, value in field_values.items():
             setattr(self, field_name, value)
 
         # Fixes

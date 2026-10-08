@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional
@@ -29,8 +24,8 @@ class InvestmentHolding(Record):
 
     price_per_share_available_online: bool
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         self.number_of_shares = self.number_of_shares or Decimal(0)

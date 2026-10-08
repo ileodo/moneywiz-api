@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from moneywiz_api.schema.schema_profile import SchemaProfile
-
 
 from dataclasses import dataclass
 from typing import Optional, cast
@@ -20,8 +15,8 @@ class Category(Record):
     type: CategoryType
     user: ID
 
-    def __init__(self, row, schema_profile: SchemaProfile):
-        super().__init__(row, schema_profile)
+    def __init__(self, row, field_values):
+        super().__init__(row, field_values)
 
         # Fixes
         self.type = self._convert_type(cast(Optional[int], self.type))
