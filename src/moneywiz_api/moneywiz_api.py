@@ -10,13 +10,18 @@ from moneywiz_api.managers.investment_holding_manager import (
 from moneywiz_api.managers.payee_manager import PayeeManager
 from moneywiz_api.managers.tag_manager import TagManager
 from moneywiz_api.managers.transaction_manager import TransactionManager
+from moneywiz_api.schema.schema_profile import SchemaProfile
+from moneywiz_api.schema.schema_profile_resolver import SchemaProfileResolver
 
 logger = logging.getLogger(__name__)
 
 
 class MoneywizApi:
-    def __init__(self, db_file: Path):
-        self.accessor = DatabaseAccessor(db_file)
+    def __init__(self, db_file: Path, schema_profile: SchemaProfile | None = None):
+        if schema_profile is None:
+            schema_profile = SchemaProfileResolver(db_file).resolve()
+        schema_profile.validate()
+        self.accessor = DatabaseAccessor(db_file, schema_profile)
         self.account_manager = AccountManager()
         self.payee_manager = PayeeManager()
         self.category_manager = CategoryManager()

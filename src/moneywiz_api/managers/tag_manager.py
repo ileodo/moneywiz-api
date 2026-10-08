@@ -5,9 +5,6 @@ from moneywiz_api.model import Tag
 
 
 class TagManager(RecordManager[Tag]):
-    def __init__(self):
-        super().__init__()
-
     @property
     def ents(self) -> Dict[str, type[Tag]]:
         return {

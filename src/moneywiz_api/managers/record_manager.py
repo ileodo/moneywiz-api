@@ -3,7 +3,6 @@ from typing import Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
 from moneywiz_api.model.record import Record
-from moneywiz_api.model.schema_mapped_row import mapped_row
 from moneywiz_api.types import GID, ID
 
 T = TypeVar("T", bound=Record)
@@ -29,7 +28,7 @@ class RecordManager(ABC, Generic[T]):
             )
 
             model_cls = self.ents[typename]
-            obj = model_cls(mapped_row(record, model_cls))
+            obj = db_accessor.schema_profile.create_record(record, model_cls)
             obj.validate()
             self.add(obj)
 

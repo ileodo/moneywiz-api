@@ -6,9 +6,6 @@ from moneywiz_api.types import ID, GID
 
 
 class CategoryManager(RecordManager[Category]):
-    def __init__(self):
-        super().__init__()
-
     @property
     def ents(self) -> Dict[str, type[Category]]:
         return {

@@ -1,17 +1,22 @@
-import re
 import sqlite3
 from collections import defaultdict
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
-from moneywiz_api.model.raw_data_handler import RawDataHandler as RDH
+from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import ENT_ID, GID, ID
+from moneywiz_api.schema.schema_profile import SchemaProfile
 
 
 class DatabaseAccessor:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, schema_profile: SchemaProfile):
+        if schema_profile.tag_table_info is None:
+            raise ValueError(
+                "Schema profile must include resolved tag table information"
+            )
+        self.schema_profile = schema_profile
         self._con = sqlite3.connect(db_path, uri=True)
 
         def dict_factory(cursor, row):
@@ -65,7 +70,7 @@ class DatabaseAccessor:
         )
         return res.fetchall()
 
-    def get_record(self, pk_id: ID, constructor: Callable = Record):
+    def get_record(self, pk_id: ID, constructor: type[Record] = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -75,9 +80,9 @@ class DatabaseAccessor:
             [pk_id],
         )
 
-        return constructor(res.fetchone())
+        return self.schema_profile.create_record(res.fetchone(), constructor)
 
-    def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
+    def get_record_by_gid(self, gid: GID, constructor: type[Record] = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -87,7 +92,7 @@ class DatabaseAccessor:
             [gid],
         )
 
-        return constructor(res.fetchone())
+        return self.schema_profile.create_record(res.fetchone(), constructor)
 
     def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, Decimal]]]:
         transaction_map: Dict[ID, List[Tuple[ID, Decimal]]] = defaultdict(list)
@@ -117,45 +122,14 @@ class DatabaseAccessor:
             refund_to_withdraw[row["ZREFUNDTRANSACTION"]] = row["ZWITHDRAWTRANSACTION"]
         return refund_to_withdraw
 
-    def _get_tags_table_info(self) -> Tuple[str, str, str]:
-        cur = self._con.cursor()
-        res = cur.execute(
-            """
-        SELECT name FROM sqlite_master WHERE type = 'table'
-
-        """
-        )
-        tag_tables = []
-        for row in res.fetchall():
-            match = re.fullmatch(r"Z_(\d+)TAGS", row["name"])
-            if match:
-                tag_tables.append((int(match.group(1)), row["name"]))
-
-        if not tag_tables:
-            raise ValueError("Could not find a tags join table matching Z_<number>TAGS")
-
-        tags_table_name = max(tag_tables)[1]
-        res = cur.execute(f'PRAGMA table_info("{tags_table_name}")')
-        columns = [row["name"] for row in res.fetchall()]
-
-        transactions_columns = [
-            column for column in columns if re.fullmatch(r"Z_\d+TRANSACTIONS", column)
-        ]
-        tags_columns = [
-            column for column in columns if re.fullmatch(r"Z_\d+TAGS", column)
-        ]
-
-        if len(transactions_columns) != 1 or len(tags_columns) != 1:
-            raise ValueError(
-                f"Could not find expected tag columns in {tags_table_name}"
-            )
-
-        return tags_table_name, transactions_columns[0], tags_columns[0]
-
     def get_tags_map(self) -> Dict[ID, List[ID]]:
         transactions_to_tags: Dict[ID, List[ID]] = defaultdict(list)
         cur = self._con.cursor()
-        tags_table_name, transactions_column, tags_column = self._get_tags_table_info()
+        tag_table_info = self.schema_profile.tag_table_info
+        assert tag_table_info is not None
+        tags_table_name = tag_table_info.table_name
+        transactions_column = tag_table_info.transactions_column
+        tags_column = tag_table_info.tags_column
         res = cur.execute(
             f"""
         SELECT {transactions_column}, {tags_column} FROM "{tags_table_name}"

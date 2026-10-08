@@ -1,3 +1,4 @@
+from moneywiz_api import DEFAULT_SCHEMA_PROFILE
 from decimal import Decimal
 
 from moneywiz_api.model.transaction import (
@@ -24,7 +25,7 @@ def transaction_row(**values):
 
 
 def test_transfer_deposit_derives_zero_legacy_original_amount():
-    transaction = TransferDepositTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=40.0,
             ZACCOUNT2=10,
@@ -37,7 +38,8 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
             ZORIGINALFEE=0.0,
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
-        )
+        ),
+        TransferDepositTransaction,
     )
 
     assert transaction.original_amount == Decimal("40.0")
@@ -46,7 +48,7 @@ def test_transfer_deposit_derives_zero_legacy_original_amount():
 
 
 def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
-    transaction = TransferWithdrawTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=-40.0,
             ZACCOUNT2=11,
@@ -59,7 +61,8 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
             ZORIGINALFEE=0.0,
             ZORIGINALFEECURRENCY=None,
             ZORIGINALEXCHANGERATE=1.0,
-        )
+        ),
+        TransferWithdrawTransaction,
     )
 
     assert transaction.recipient_amount == Decimal("40.0")
@@ -68,7 +71,7 @@ def test_transfer_withdraw_derives_zero_legacy_recipient_amount():
 
 
 def test_withdraw_ignores_stale_rate_when_amounts_are_identical():
-    transaction = WithdrawTransaction(
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
         transaction_row(
             ZAMOUNT1=-8.58,
             ZACCOUNT2=10,
@@ -76,7 +79,8 @@ def test_withdraw_ignores_stale_rate_when_amounts_are_identical():
             ZORIGINALAMOUNT=-8.58,
             ZORIGINALCURRENCY="GBP",
             ZORIGINALEXCHANGERATE=1.1678321678321677,
-        )
+        ),
+        WithdrawTransaction,
     )
 
     assert transaction.original_exchange_rate is None

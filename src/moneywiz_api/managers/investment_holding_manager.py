@@ -7,9 +7,6 @@ from moneywiz_api.types import ID
 
 
 class InvestmentHoldingManager(RecordManager[InvestmentHolding]):
-    def __init__(self):
-        super().__init__()
-
     @property
     def ents(self) -> Dict[str, type[InvestmentHolding]]:
         return {
