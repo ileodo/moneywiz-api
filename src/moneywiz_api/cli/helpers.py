@@ -20,12 +20,12 @@ class ShellHelper:
 
     def view_id(self, record_id: ID):
         record = self._mw_api.accessor.get_record(record_id)
-        click.echo(self._mw_api.accessor.typename_for(record.ent()))
+        click.echo(self._mw_api.accessor.typename_for(record.ent))
         click.echo(json.dumps(record.filtered(), sort_keys=True, indent=4))
 
     def view_gid(self, record_gid: GID):
         record = self._mw_api.accessor.get_record_by_gid(record_gid)
-        click.echo(self._mw_api.accessor.typename_for(record.ent()))
+        click.echo(self._mw_api.accessor.typename_for(record.ent))
         click.echo(json.dumps(record.filtered(), sort_keys=True, indent=4))
 
     def write_stats_data_files(self, path_prefix: Path = Path("data/stats")):

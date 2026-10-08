@@ -46,6 +46,37 @@ print(record)
 
 It also offers a interactive shell `moneywiz-cli`.
 
+### Schema profiles
+
+`SchemaProfile` defines column aliases and converters for `Record` and its
+subclasses. Build a profile directly from Python field specifications:
+
+```python
+from moneywiz_api import DEFAULT_SCHEMA_PROFILE, MoneywizApi, SchemaProfile
+from moneywiz_api.model.tag import Tag
+from moneywiz_api.model.schema_fields import schema_field
+
+column_map = {
+    **DEFAULT_SCHEMA_PROFILE.column_map,
+    Tag: {
+        **DEFAULT_SCHEMA_PROFILE.column_map[Tag.__name__],
+        "name": schema_field("CUSTOM_TAG_NAME", "ZNAME6"),
+    },
+}
+profile = SchemaProfile(column_map)
+profile.validate()
+api = MoneywizApi("<path_to_your_sqlite_file>", schema_profile=profile)
+```
+
+Use `schema_field`, `datetime_field`, `decimal_field`,
+`nullable_decimal_field`, or `is_one_field` to define each field. Base-class
+fields are inherited by subclasses. `profile.validate()` checks public dataclass
+fields on loaded `Record` subclasses and reports any missing definitions.
+
+`SchemaProfile.get_field(row, model_class, field_name)` resolves a field from a
+raw row. Record constructors use the profile to assign public fields; private
+fields and model-specific fixups stay in the constructors. Pass a profile to a manager or directly to a model constructor to use a custom mapping.
+
 ## Tests
 
 Run unit tests without a database:

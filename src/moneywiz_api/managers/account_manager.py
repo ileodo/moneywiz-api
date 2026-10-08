@@ -1,3 +1,4 @@
+from moneywiz_api.schema_profile import SchemaProfile
 from typing import Dict, List
 
 from moneywiz_api.managers.record_manager import RecordManager
@@ -15,8 +16,8 @@ from moneywiz_api.types import ID
 
 
 class AccountManager(RecordManager[Account]):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, schema_profile: SchemaProfile):
+        super().__init__(schema_profile)
 
     @property
     def ents(self) -> Dict[str, type[Account]]:

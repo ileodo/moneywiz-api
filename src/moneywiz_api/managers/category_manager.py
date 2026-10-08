@@ -1,3 +1,4 @@
+from moneywiz_api.schema_profile import SchemaProfile
 from typing import Dict, List
 
 from moneywiz_api.model.category import Category
@@ -6,8 +7,8 @@ from moneywiz_api.types import ID, GID
 
 
 class CategoryManager(RecordManager[Category]):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, schema_profile: SchemaProfile):
+        super().__init__(schema_profile)
 
     @property
     def ents(self) -> Dict[str, type[Category]]:

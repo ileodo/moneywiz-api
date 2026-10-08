@@ -1,25 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from moneywiz_api.schema_profile import SchemaProfile
+
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Optional
 from decimal import Decimal
 
 from moneywiz_api.model.record import Record
-from moneywiz_api.model.schema_mapped_row import decimal_field, mapped_row, schema_field
 from moneywiz_api.types import ID
 
 
 @dataclass
 class Account(Record, ABC):
-    FIELDS = {
-        "display_order": schema_field("ZDISPLAYORDER"),
-        "group_id": schema_field("ZGROUPID"),
-        "name": schema_field("ZNAME"),
-        "currency": schema_field("ZCURRENCYNAME"),
-        "opening_balance": decimal_field("ZOPENINGBALANCE"),
-        "info": schema_field("ZINFO"),
-        "user": schema_field("ZUSER"),
-    }
-
     display_order: int = field(repr=False)
     group_id: int = field(repr=False)
 
@@ -29,18 +25,8 @@ class Account(Record, ABC):
     info: Optional[str]
     user: ID
 
-    def __init__(self, row):
-        row = mapped_row(row, self.__class__)
-        super().__init__(row)
-        self.display_order = row.get("display_order")
-        self.group_id = row.get("group_id")
-
-        self.name = row.get("name")
-        self.currency = row.get("currency")
-        self.opening_balance = row.get("opening_balance")
-        self.info = row.get("info")
-
-        self.user = row.get("user")
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
         # Fixes
 
@@ -57,33 +43,28 @@ class Account(Record, ABC):
 
 @dataclass
 class BankChequeAccount(Account):
-    def __init__(self, row):
-        row = mapped_row(row, self.__class__)
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
 
 @dataclass
 class BankSavingAccount(Account):
-    def __init__(self, row):
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
 
 @dataclass
 class CashAccount(Account):
-    def __init__(self, row):
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
 
 @dataclass
 class CreditCardAccount(Account):
-    FIELDS = {
-        "statement_day": schema_field("ZSTATEMENTENDDAY"),
-    }
     statement_day: int  # day in the month
 
-    def __init__(self, row):
-        super().__init__(row)
-        self.statement_day = row.get("statement_day")
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
     def validate(self) -> None:
         super().validate()
@@ -92,17 +73,17 @@ class CreditCardAccount(Account):
 
 @dataclass
 class LoanAccount(CreditCardAccount):
-    def __init__(self, row):
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
 
 @dataclass
 class InvestmentAccount(Account):
-    def __init__(self, row):
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
 
 @dataclass
 class ForexAccount(InvestmentAccount):
-    def __init__(self, row):
-        super().__init__(row)
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)

@@ -1,3 +1,4 @@
+from moneywiz_api.schema_profile import SchemaProfile
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Tuple, Protocol, cast
@@ -26,8 +27,8 @@ class _AccountTransaction(Protocol):
 
 
 class TransactionManager(RecordManager[Transaction]):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, schema_profile: SchemaProfile) -> None:
+        super().__init__(schema_profile)
         self.category_assignment: Dict[ID, List[Tuple[ID, Decimal]]] = {}
         self.refund_maps: Dict[ID, ID] = {}
         self.tags_map: Dict[ID, List[ID]] = {}

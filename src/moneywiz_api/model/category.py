@@ -1,34 +1,30 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from moneywiz_api.schema_profile import SchemaProfile
+
+
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, cast
 
 from moneywiz_api.model.record import Record
-from moneywiz_api.model.schema_mapped_row import mapped_row, schema_field
 from moneywiz_api.types import ID, CategoryType
 
 
 @dataclass
 class Category(Record):
-    FIELDS = {
-        "name": schema_field("ZNAME2"),
-        "parent_id": schema_field("ZPARENTCATEGORY"),
-        "type": schema_field("ZTYPE2"),
-        "user": schema_field("ZUSER3"),
-    }
-
     name: str
     parent_id: Optional[int]
     type: CategoryType
     user: ID
 
-    def __init__(self, row):
-        row = mapped_row(row, self.__class__)
-        super().__init__(row)
-        self.name = row.get("name")
-        self.parent_id = row.get("parent_id")
-        self.type = self._convert_type(row.get("type"))
-        self.user = row.get("user")
+    def __init__(self, row, schema_profile: SchemaProfile):
+        super().__init__(row, schema_profile)
 
         # Fixes
+        self.type = self._convert_type(cast(Optional[int], self.type))
 
     def validate(self) -> None:
         super().validate()

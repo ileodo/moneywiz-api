@@ -17,10 +17,10 @@ class _UnconfiguredManager:
 
 
 if os.environ.get("MONEYWIZ_TEST_DB_PATH"):
-    from moneywiz_api import MoneywizApi
+    from moneywiz_api import MoneywizApi, DEFAULT_SCHEMA_PROFILE
 
     TEST_DB_PATH = test_config.get_test_db_path()
-    moneywizApi = MoneywizApi(TEST_DB_PATH)
+    moneywizApi = MoneywizApi(TEST_DB_PATH, DEFAULT_SCHEMA_PROFILE)
 
     accessor: Any = moneywizApi.accessor
     account_manager: Any = moneywizApi.account_manager

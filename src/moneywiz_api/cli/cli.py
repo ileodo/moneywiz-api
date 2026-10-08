@@ -1,3 +1,4 @@
+from moneywiz_api.schema_profile import DEFAULT_SCHEMA_PROFILE
 import logging
 import random
 import readline
@@ -57,7 +58,7 @@ def main(db_file_path, demo_dump, log_level) -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(numeric_level)
 
-    moneywiz_api = MoneywizApi(db_file_path)
+    moneywiz_api = MoneywizApi(db_file_path, DEFAULT_SCHEMA_PROFILE)
 
     (
         accessor,
