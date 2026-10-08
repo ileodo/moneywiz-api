@@ -13,7 +13,9 @@ from moneywiz_api.schema.schema_profile import SchemaProfile
 class DatabaseAccessor:
     def __init__(self, db_path: Path, schema_profile: SchemaProfile):
         if schema_profile.tag_table_info is None:
-            raise ValueError("Schema profile must include resolved tag table information")
+            raise ValueError(
+                "Schema profile must include resolved tag table information"
+            )
         self.schema_profile = schema_profile
         self._con = sqlite3.connect(db_path, uri=True)
 

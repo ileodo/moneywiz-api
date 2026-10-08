@@ -18,9 +18,7 @@ from moneywiz_api.utils import get_datetime
 class SchemaProfileResolver:
     """Build a profile from a database path and an optional baseline profile."""
 
-    def __init__(
-        self, db_path: str | Path, baseline: SchemaProfile | None = None
-    ):
+    def __init__(self, db_path: str | Path, baseline: SchemaProfile | None = None):
         self._db_path = db_path
         self._baseline = DEFAULT_SCHEMA_PROFILE if baseline is None else baseline
 

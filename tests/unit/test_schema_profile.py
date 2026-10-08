@@ -85,7 +85,10 @@ def test_profile_merges_multiple_inheritance_levels_and_converters():
 def test_complete_profile_and_immutable_definitions():
     definitions = {
         **DEFAULT_SCHEMA_PROFILE.column_map,
-        "Record": {**DEFAULT_SCHEMA_PROFILE.column_map["Record"], "id": schema_field("ID")},
+        "Record": {
+            **DEFAULT_SCHEMA_PROFILE.column_map["Record"],
+            "id": schema_field("ID"),
+        },
     }
     profile = SchemaProfile(definitions)
     definitions["Record"].clear()
