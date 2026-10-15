@@ -2,7 +2,7 @@ import sqlite3
 from collections import defaultdict
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, cast
 
 from moneywiz_api.schema.raw_data_handler import RawDataHandler as RDH
 from moneywiz_api.model.record import Record
@@ -59,6 +59,13 @@ class DatabaseAccessor:
         assert ent_id is not None, f"Unknown typename {typename}"
         return ent_id
 
+    def _table_exists(self, table_name: str) -> bool:
+        row = self._con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        return row is not None
+
     def query_objects(self, typenames: List[str]) -> List[Any]:
         cur = self._con.cursor()
         res = cur.execute(
@@ -70,7 +77,12 @@ class DatabaseAccessor:
         )
         return res.fetchall()
 
-    def get_record(self, pk_id: ID, constructor: type[Record] = Record):
+    def _construct_record(self, row, constructor: Callable):
+        if isinstance(constructor, type) and issubclass(constructor, Record):
+            return self.schema_profile.create_record(row, constructor)
+        return cast(Callable, constructor)(row)
+
+    def get_record(self, pk_id: ID, constructor: Callable = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -80,9 +92,9 @@ class DatabaseAccessor:
             [pk_id],
         )
 
-        return self.schema_profile.create_record(res.fetchone(), constructor)
+        return self._construct_record(res.fetchone(), constructor)
 
-    def get_record_by_gid(self, gid: GID, constructor: type[Record] = Record):
+    def get_record_by_gid(self, gid: GID, constructor: Callable = Record):
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -92,10 +104,12 @@ class DatabaseAccessor:
             [gid],
         )
 
-        return self.schema_profile.create_record(res.fetchone(), constructor)
+        return self._construct_record(res.fetchone(), constructor)
 
     def get_category_assignment(self) -> Dict[ID, List[Tuple[ID, Decimal]]]:
         transaction_map: Dict[ID, List[Tuple[ID, Decimal]]] = defaultdict(list)
+        if not self._table_exists("ZCATEGORYASSIGMENT"):
+            return transaction_map
         cur = self._con.cursor()
         res = cur.execute(
             """
@@ -111,6 +125,8 @@ class DatabaseAccessor:
 
     def get_refund_maps(self) -> Dict[ID, ID]:
         refund_to_withdraw: Dict[ID, ID] = {}
+        if not self._table_exists("ZWITHDRAWREFUNDTRANSACTIONLINK"):
+            return refund_to_withdraw
         cur = self._con.cursor()
         res = cur.execute(
             """

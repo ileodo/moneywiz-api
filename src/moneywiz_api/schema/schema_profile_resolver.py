@@ -4,7 +4,14 @@ import re
 import sqlite3
 from pathlib import Path
 
+from moneywiz_api.model.investment_holding import InvestmentHolding
+from moneywiz_api.model.transaction import (
+    InvestmentBuyTransaction,
+    InvestmentSellTransaction,
+)
+
 from moneywiz_api.schema.schema_fields import (
+    FieldSpec,
     datetime_field,
     decimal_field,
     is_one_field,
@@ -15,6 +22,10 @@ from moneywiz_api.schema.schema_profile import SchemaProfile, TagTableInfo
 from moneywiz_api.utils import get_datetime
 
 
+class UnsupportedInvestmentSchemaError(ValueError):
+    """Raised when investment columns cannot be selected safely for a store."""
+
+
 class SchemaProfileResolver:
     """Build a profile from a database path and an optional baseline profile."""
 
@@ -23,18 +34,148 @@ class SchemaProfileResolver:
         self._baseline = DEFAULT_SCHEMA_PROFILE if baseline is None else baseline
 
     def resolve(self) -> SchemaProfile:
-        """Return the baseline enriched with tag-table details from the database."""
-        if self._baseline.tag_table_info is not None:
-            return self._baseline
-
+        """Return the baseline enriched with database-specific schema details."""
         connection = sqlite3.connect(self._db_path, uri=True)
         connection.row_factory = sqlite3.Row
         try:
-            return self._baseline.with_tag_table_info(
-                self._get_tags_table_info(connection)
+            column_map = {
+                model_name: dict(fields)
+                for model_name, fields in self._baseline.column_map.items()
+            }
+            self._resolve_investment_fields(connection, column_map)
+            return SchemaProfile(column_map).with_tag_table_info(
+                self._baseline.tag_table_info or self._get_tags_table_info(connection)
             )
         finally:
             connection.close()
+
+    def _resolve_investment_fields(
+        self,
+        connection: sqlite3.Connection,
+        column_map: dict[str | type, dict[str, FieldSpec]],
+    ) -> None:
+        tables = {
+            row["name"]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "ZSYNCOBJECT" not in tables or "Z_PRIMARYKEY" not in tables:
+            return
+
+        entities: dict[str, int] = {
+            row["Z_NAME"]: row["Z_ENT"]
+            for row in connection.execute(
+                "SELECT Z_ENT, Z_NAME FROM Z_PRIMARYKEY WHERE Z_NAME IN (?, ?, ?)",
+                (
+                    "InvestmentHolding",
+                    "InvestmentBuyTransaction",
+                    "InvestmentSellTransaction",
+                ),
+            ).fetchall()
+        }
+        if not entities:
+            return
+
+        active_entity_ids = {
+            row["Z_ENT"]
+            for row in connection.execute(
+                "SELECT DISTINCT Z_ENT FROM ZSYNCOBJECT WHERE Z_ENT IN ("
+                + ", ".join("?" for _ in entities)
+                + ")",
+                tuple(entities.values()),
+            ).fetchall()
+        }
+        active_entities = {
+            name: entity_id
+            for name, entity_id in entities.items()
+            if entity_id in active_entity_ids
+        }
+        if not active_entities:
+            return
+
+        columns = {
+            row["name"]
+            for row in connection.execute('PRAGMA table_info("ZSYNCOBJECT")')
+        }
+        for models, field_name, aliases in (
+            (
+                (InvestmentHolding,),
+                "number_of_shares",
+                ("ZNUMBEROFSHARES", "ZNUMBEROFSHARES1"),
+            ),
+            (
+                (InvestmentBuyTransaction, InvestmentSellTransaction),
+                "number_of_shares",
+                ("ZNUMBEROFSHARES", "ZNUMBEROFSHARES1"),
+            ),
+            (
+                (InvestmentBuyTransaction, InvestmentSellTransaction),
+                "price_per_share",
+                ("ZPRICEPERSHARE", "ZPRICEPERSHARE1"),
+            ),
+        ):
+            specs = {
+                model: self._baseline.specs_for(model)[field_name]
+                for model in models
+                if model.__name__ in active_entities
+            }
+            automatic_specs = {
+                model: spec
+                for model, spec in specs.items()
+                if spec.aliases
+                == DEFAULT_SCHEMA_PROFILE.specs_for(model)[field_name].aliases
+            }
+            if not automatic_specs:
+                continue
+            column = self._column_for_entities(
+                connection,
+                columns,
+                aliases[0],
+                aliases[1],
+                tuple(active_entities[model.__name__] for model in automatic_specs),
+            )
+            if column is None:
+                consumer = (
+                    "holding shares column"
+                    if models[0] is InvestmentHolding
+                    else "transaction columns"
+                )
+                raise UnsupportedInvestmentSchemaError(
+                    f"unsupported investment schema profile: ambiguous {consumer}"
+                )
+            for model, spec in automatic_specs.items():
+                column_map.setdefault(model.__name__, {})[field_name] = FieldSpec(
+                    (column,), spec.converter
+                )
+
+    @staticmethod
+    def _column_for_entities(
+        connection: sqlite3.Connection,
+        columns: set[str],
+        unsuffixed: str,
+        suffixed: str,
+        entity_ids: tuple[int, ...],
+    ) -> str | None:
+        has_unsuffixed = unsuffixed in columns
+        has_suffixed = suffixed in columns
+        if has_unsuffixed != has_suffixed:
+            return unsuffixed if has_unsuffixed else suffixed
+        if not has_unsuffixed:
+            return None
+
+        placeholders = ", ".join("?" for _ in entity_ids)
+        counts = connection.execute(
+            f'SELECT COUNT("{unsuffixed}"), COUNT("{suffixed}") '
+            f'FROM "ZSYNCOBJECT" WHERE "Z_ENT" IN ({placeholders})',
+            entity_ids,
+        ).fetchone()
+        unsuffixed_count, suffixed_count = counts[0], counts[1]
+        if unsuffixed_count and not suffixed_count:
+            return unsuffixed
+        if suffixed_count and not unsuffixed_count:
+            return suffixed
+        return None
 
     @staticmethod
     def _get_tags_table_info(connection: sqlite3.Connection) -> TagTableInfo:

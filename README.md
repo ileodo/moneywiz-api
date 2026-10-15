@@ -86,7 +86,13 @@ profile.validate()
 ```
 
 `SchemaProfileResolver(db_path, baseline=None).resolve()` enriches a profile
-with database-specific tag-join table details. When no baseline is provided, it
+with database-specific tag-join table details and investment column choices.
+Explicit baseline alias overrides are preserved; automatic detection applies to
+investment fields that retain the default aliases.
+Holdings and buy/sell transactions are resolved separately using physical
+columns and entity-specific row evidence. If populated investment entities have
+no safe column choice, resolution raises `UnsupportedInvestmentSchemaError`
+before records are loaded. When no baseline is provided, it
 uses `DEFAULT_SCHEMA_PROFILE`. The resolved profile can be passed to `MoneywizApi` or the lower-level
 `DatabaseAccessor`:
 
@@ -100,6 +106,10 @@ api = MoneywizApi(db_path, schema_profile=resolved_profile)
 a raw row, reports field-resolution failures together, and creates the model
 instance. Record
 classes receive mapped field values and do not depend on `SchemaProfile`.
+
+Managers skip malformed rows and report them through `manager.load_errors`,
+which returns a copy of the skipped records' IDs, model names, and error types.
+Unsupported database schemas stop loading instead of being treated as row errors.
 
 ## Tests
 

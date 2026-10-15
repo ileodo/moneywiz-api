@@ -49,3 +49,16 @@ def test_get_tags_map_raises_when_tags_table_is_missing(tmp_path):
 
     with pytest.raises(sqlite3.OperationalError, match="no such table"):
         accessor.get_tags_map()
+
+
+def test_get_record_preserves_callable_constructors(tmp_path):
+    db_path = tmp_path / "moneywiz.sqlite"
+    accessor = _create_accessor(db_path)
+    accessor._con.execute("CREATE TABLE ZSYNCOBJECT (Z_PK INTEGER, ZGID TEXT)")
+    accessor._con.execute("INSERT INTO ZSYNCOBJECT VALUES (1, 'record-gid')")
+
+    def get_gid(row):
+        return row["ZGID"]
+
+    assert accessor.get_record(1, get_gid) == "record-gid"
+    assert accessor.get_record_by_gid("record-gid", get_gid) == "record-gid"

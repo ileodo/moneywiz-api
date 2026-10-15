@@ -23,6 +23,10 @@ Use four-space indentation, double-quoted strings, and Ruff's 88-character line 
 
 Use pytest and favor focused unit tests with row dictionaries or temporary SQLite databases. Integration tests are opt-in: set `MONEYWIZ_TEST_DB_PATH` to an absolute path to a disposable MoneyWiz database, then run `.venv/bin/python -m pytest tests`. They skip when the variable is unset. Do not use a live personal database. CI runs unit tests, Ruff, and mypy; no minimum coverage threshold is configured.
 
+When automatic schema resolution is added or migrated, preserve caller-supplied aliases and converters, resolve inherited effective specifications rather than own-class defaults, and cover explicit aliases, inherited fields, partial consumer customization, and record construction. Restrict automatic row-evidence resolution to consumers that require it.
+
+Treat record identity admission as part of recoverable row processing: preflight every ID and GID collision before changing either lookup map, then perform insertion inside the row-recovery boundary. Cover duplicate identities, unchanged first-record lookups, and later valid-row recovery.
+
 ## Commit & Pull Request Guidelines
 
 Recent commits use short subjects such as `Fix schema profile validation and record construction`; capitalization and prefixes vary. Write a brief imperative subject that names the change. In pull requests, explain behavior changes, list the checks run, and link a relevant issue when one exists. Include a CLI example when changing user-visible shell behavior.
