@@ -47,8 +47,13 @@ class TransactionManager(RecordManager[Transaction]):
             "WithdrawTransaction": WithdrawTransaction,
         }
 
-    def load(self, db_accessor: DatabaseAccessor, strict: bool = False) -> None:
-        super().load(db_accessor, strict=strict)
+    def load(
+        self,
+        db_accessor: DatabaseAccessor,
+        strict: bool = False,
+        wrap_errors: bool = False,
+    ) -> None:
+        super().load(db_accessor, strict=strict, wrap_errors=wrap_errors)
         self.category_assignment = db_accessor.get_category_assignment()
         self.refund_maps = db_accessor.get_refund_maps()
         self.tags_map = db_accessor.get_tags_map()

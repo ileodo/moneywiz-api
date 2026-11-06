@@ -12,3 +12,14 @@ class FailedRecord:
     raw: Dict[str, Any]
     error: Exception
     record: Record | None = None
+
+
+class RecordLoadError(Exception):
+    """A record failed during a load configured to raise errors."""
+
+    def __init__(self, failure: FailedRecord):
+        self.failure = failure
+        super().__init__(
+            f"Failed to load {failure.model_type} row "
+            f"{failure.raw.get('Z_PK')}: {failure.error}"
+        )

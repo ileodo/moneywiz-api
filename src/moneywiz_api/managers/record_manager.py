@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
-from moneywiz_api.managers.failed_record import FailedRecord
+from moneywiz_api.managers.failed_record import FailedRecord, RecordLoadError
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import GID, ID
 
@@ -20,7 +20,12 @@ class RecordManager(ABC, Generic[T]):
     def ents(self) -> Dict[str, type[T]]:
         raise NotImplementedError()
 
-    def load(self, db_accessor: DatabaseAccessor, strict: bool = False) -> None:
+    def load(
+        self,
+        db_accessor: DatabaseAccessor,
+        strict: bool = False,
+        wrap_errors: bool = False,
+    ) -> None:
         self._records = {}
         self._gid_to_id = {}
         self.failed_records = []
@@ -39,6 +44,10 @@ class RecordManager(ABC, Generic[T]):
                 obj.validate()
             except Exception as error:
                 if strict:
+                    if wrap_errors:
+                        raise RecordLoadError(
+                            FailedRecord(typename, dict(record), error, obj)
+                        ) from error
                     raise
                 self.failed_records.append(
                     FailedRecord(typename, dict(record), error, obj)
