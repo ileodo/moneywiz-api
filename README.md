@@ -66,6 +66,22 @@ for failure in api.failed_records:
 strict_api = MoneywizApi("<path_to_your_sqlite_file>", strict=True)
 ```
 
+For explicit loading, use `MoneyWiz`. Each call returns a new `LoadResult`:
+
+```python
+from moneywiz_api import MoneyWiz, RecordLoadError
+
+database = MoneyWiz("<path_to_your_sqlite_file>")
+result = database.load(on_error="collect")
+accounts = result.accounts.records()
+failures = result.failed_records
+
+try:
+    database.load(on_error="raise")
+except RecordLoadError as error:
+    print(error.failure.raw, error.failure.error)
+```
+
 A `SchemaProfile` maps each `Record` field to one or more database column names
 and optional converters. Field specifications are available from
 `moneywiz_api.schema.schema_fields`, including `schema_field`,
