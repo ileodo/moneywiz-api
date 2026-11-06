@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Generic, TypeVar
 
 from moneywiz_api.database_accessor import DatabaseAccessor
+from moneywiz_api.managers.failed_record import FailedRecord
 from moneywiz_api.model.record import Record
 from moneywiz_api.types import GID, ID
 
@@ -12,13 +13,17 @@ class RecordManager(ABC, Generic[T]):
     def __init__(self) -> None:
         self._records: Dict[ID, T] = {}
         self._gid_to_id: Dict[GID, ID] = {}
+        self.failed_records: list[FailedRecord] = []
 
     @property
     @abstractmethod
     def ents(self) -> Dict[str, type[T]]:
         raise NotImplementedError()
 
-    def load(self, db_accessor: DatabaseAccessor) -> None:
+    def load(self, db_accessor: DatabaseAccessor, strict: bool = False) -> None:
+        self._records = {}
+        self._gid_to_id = {}
+        self.failed_records = []
         records = db_accessor.query_objects(list(self.ents.keys()))
 
         for record in records:
@@ -28,8 +33,17 @@ class RecordManager(ABC, Generic[T]):
             )
 
             model_cls = self.ents[typename]
-            obj = db_accessor.schema_profile.create_record(record, model_cls)
-            obj.validate()
+            obj = None
+            try:
+                obj = db_accessor.schema_profile.create_record(record, model_cls)
+                obj.validate()
+            except Exception as error:
+                if strict:
+                    raise
+                self.failed_records.append(
+                    FailedRecord(typename, dict(record), error, obj)
+                )
+                continue
             self.add(obj)
 
     def add(self, record: T) -> None:
