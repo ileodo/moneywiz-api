@@ -50,6 +50,8 @@ class DepositTransaction(Transaction):
     original_amount: Decimal  # neg: expense, pos: income
     original_exchange_rate: Optional[Decimal]
 
+    investment_symbol: Optional[str]
+
     def __init__(self, row, field_values):
         super().__init__(row, field_values)
 
@@ -221,6 +223,8 @@ class RefundTransaction(Transaction):
     original_amount: Decimal
     original_exchange_rate: Optional[Decimal]
 
+    investment_symbol: Optional[str]
+
     def __init__(self, row, field_values):
         super().__init__(row, field_values)
 
@@ -381,6 +385,8 @@ class WithdrawTransaction(Transaction):
     original_currency: str
     original_amount: Decimal  # neg: expense, pos: income ATTENTION: sign got fixed
     original_exchange_rate: Optional[Decimal]
+
+    investment_symbol: Optional[str]
 
     def __init__(self, row, field_values):
         super().__init__(row, field_values)

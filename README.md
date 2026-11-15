@@ -46,6 +46,13 @@ print(record)
 
 It also offers a interactive shell `moneywiz-cli`.
 
+### Transaction investment symbols
+
+`DepositTransaction`, `RefundTransaction`, and `WithdrawTransaction` expose an
+`investment_symbol` field. The default schema reads it from `ZINVESTMENTSYMBOL`.
+The value is a string, or `None` when the database value is null. The field is
+also included in the output of `record.as_dict()`.
+
 ### Schema profiles
 
 `MoneywizApi` resolves the default `SchemaProfile` from the database path when it

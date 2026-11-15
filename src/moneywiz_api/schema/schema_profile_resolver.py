@@ -133,6 +133,7 @@ DEFAULT_SCHEMA_PROFILE = SchemaProfile(
             "original_currency": schema_field("ZORIGINALCURRENCY"),
             "original_amount": decimal_field("ZORIGINALAMOUNT"),
             "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+            "investment_symbol": schema_field("ZINVESTMENTSYMBOL"),
         },
         "InvestmentExchangeTransaction": {
             "account": schema_field("ZACCOUNT2"),
@@ -173,6 +174,7 @@ DEFAULT_SCHEMA_PROFILE = SchemaProfile(
             "original_currency": schema_field("ZORIGINALCURRENCY"),
             "original_amount": decimal_field("ZORIGINALAMOUNT"),
             "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+            "investment_symbol": schema_field("ZINVESTMENTSYMBOL"),
         },
         "TransferBudgetTransaction": {},
         "TransferDepositTransaction": {
@@ -205,6 +207,7 @@ DEFAULT_SCHEMA_PROFILE = SchemaProfile(
             "original_currency": schema_field("ZORIGINALCURRENCY"),
             "original_amount": decimal_field("ZORIGINALAMOUNT"),
             "original_exchange_rate": nullable_decimal_field("ZORIGINALEXCHANGERATE"),
+            "investment_symbol": schema_field("ZINVESTMENTSYMBOL"),
         },
     }
 )

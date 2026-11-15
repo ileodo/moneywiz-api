@@ -1,7 +1,11 @@
 from moneywiz_api import DEFAULT_SCHEMA_PROFILE
 from decimal import Decimal
 
+import pytest
+
 from moneywiz_api.model.transaction import (
+    DepositTransaction,
+    RefundTransaction,
     TransferDepositTransaction,
     TransferWithdrawTransaction,
     WithdrawTransaction,
@@ -79,8 +83,37 @@ def test_withdraw_ignores_stale_rate_when_amounts_are_identical():
             ZORIGINALAMOUNT=-8.58,
             ZORIGINALCURRENCY="GBP",
             ZORIGINALEXCHANGERATE=1.1678321678321677,
+            ZINVESTMENTSYMBOL=None,
         ),
         WithdrawTransaction,
     )
 
     assert transaction.original_exchange_rate is None
+
+
+@pytest.mark.parametrize(
+    "model_cls, amount",
+    [
+        (DepositTransaction, 10.0),
+        (RefundTransaction, 10.0),
+        (WithdrawTransaction, -10.0),
+    ],
+)
+@pytest.mark.parametrize("investment_symbol", ["AAPL", None])
+def test_transaction_loads_investment_symbol(model_cls, amount, investment_symbol):
+    transaction = DEFAULT_SCHEMA_PROFILE.create_record(
+        transaction_row(
+            ZAMOUNT1=amount,
+            ZACCOUNT2=10,
+            ZPAYEE2=None,
+            ZORIGINALAMOUNT=amount,
+            ZORIGINALCURRENCY="USD",
+            ZORIGINALEXCHANGERATE=1.0,
+            ZINVESTMENTSYMBOL=investment_symbol,
+        ),
+        model_cls,
+    )
+
+    transaction.validate()
+    assert transaction.investment_symbol == investment_symbol
+    assert transaction.as_dict()["investment_symbol"] == investment_symbol
